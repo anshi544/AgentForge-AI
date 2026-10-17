@@ -225,6 +225,22 @@ elif page == "Agent Workspace":
 
 elif page == "Results":
     st.title("📊 Task Results")
+
+    col1, col2 = st.columns([4, 1])
+
+    with col1:
+        st.write("View your completed and previously saved tasks.")
+
+    with col2:
+        if st.button("🔄 Refresh History"):
+            saved_tasks = load_tasks(st.session_state.session_id)
+
+            if saved_tasks:
+                st.session_state.task_history = saved_tasks
+                st.success("Task history refreshed.")
+            else:
+                st.info("No saved tasks found for this session.")
+
     tasks = st.session_state.task_history
     if not tasks:
         st.info("No tasks available. Create a task first.")
