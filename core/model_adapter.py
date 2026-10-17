@@ -1,27 +1,37 @@
+```python
 import streamlit as st
 from google import genai
 
 
 def generate_response(prompt: str) -> str:
-    """Generate an AI response using the configured Gemini provider."""
+    """Generate a response using the configured Gemini model."""
 
     api_key = st.secrets.get("GEMINI_API_KEY")
 
     if not api_key:
         raise ValueError(
-            "Gemini API key is missing. Configure GEMINI_API_KEY "
-            "in Streamlit Cloud Secrets."
+            "Gemini API key is missing. "
+            "Configure GEMINI_API_KEY in Streamlit Cloud Secrets."
         )
 
-    model = st.secrets.get("GEMINI_MODEL", "gemini-2.5-flash")
-    client = genai.Client(api_key=api_key)
-
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
+    model = st.secrets.get(
+        "GEMINI_MODEL",
+        "gemini-3.8-flash",
     )
 
-    if not response.text:
-        raise RuntimeError("The AI provider returned an empty response.")
+    client = genai.Client(api_key=api_key)
 
-    return response.text
+    interaction = client.interactions.create(
+        model=model,
+        input=prompt,
+    )
+
+    result = interaction.output_text
+
+    if not result:
+        raise RuntimeError(
+            "Gemini returned an empty response."
+        )
+
+    return result
+```
