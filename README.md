@@ -1,2 +1,2 @@
 # AgentForge-AI
-An Autonomous Multi-Agent Startup Builder powered by AI.
+An intelligent multi-agent platform for task automation and collaborative problem solving
