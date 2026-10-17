@@ -63,7 +63,23 @@ if "task_history" not in st.session_state:
 if "active_task" not in st.session_state:
     st.session_state.active_task = None
 with st.sidebar:
-st.title("🤖 AgentForge AI")
+    st.title("🤖 AgentForge AI")
+    st.caption("Intelligent Multi-Agent Platform")
+
+    page = st.radio(
+        "Navigation",
+        [
+            "Dashboard",
+            "Create Task",
+            "Agent Workspace",
+            "Results",
+            "About"
+        ]
+    )
+
+    st.divider()
+    st.caption("AI-powered task orchestration")
+    st.caption("Model-independent prototype")
 st.caption("Intelligent Multi-Agent Platform")
 
 ```
@@ -84,7 +100,7 @@ st.caption("Model-independent prototype")
 ```
 
 if page == "Dashboard":
-st.markdown(""" <div class="hero"> <h1>AgentForge AI</h1> <p>
+    st.markdown(...)
 Turn complex goals into structured workflows using
 specialized AI agents. </p> </div>
 """, unsafe_allow_html=True)
