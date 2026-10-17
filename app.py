@@ -222,6 +222,7 @@ elif page == "Create Task":
             "Task Title",
             placeholder="Example: Prepare a Python learning roadmap",
         )
+
         task_description = st.text_area(
             "Describe Your Goal",
             placeholder=(
@@ -230,6 +231,7 @@ elif page == "Create Task":
             ),
             height=160,
         )
+
         task_type = st.selectbox(
             "Workflow Type",
             [
@@ -240,9 +242,13 @@ elif page == "Create Task":
                 "Content Creation",
             ],
         )
-        submitted = st.form_submit_button("Create Task", type="primary")
 
-        if submitted:
+        submitted = st.form_submit_button(
+            "Create Task",
+            type="primary",
+        )
+
+    if submitted:
         if not task_title.strip() or not task_description.strip():
             st.error(
                 "Please enter both a task title and task description."
@@ -292,9 +298,7 @@ elif page == "Create Task":
                     "The task could not be completed. "
                     "Check your API configuration and deployment logs."
                 )
-
                 st.caption(f"Error details: {e}")
-
 # =========================================================
 # AGENT WORKSPACE
 # =========================================================
