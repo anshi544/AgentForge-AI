@@ -1,5 +1,5 @@
 import streamlit as st
-
+from core.orchestrator import execute_task
 # =========================================================
 # PAGE CONFIGURATION
 # =========================================================
@@ -242,9 +242,11 @@ elif page == "Create Task":
         )
         submitted = st.form_submit_button("Create Task", type="primary")
 
-    if submitted:
+        if submitted:
         if not task_title.strip() or not task_description.strip():
-            st.error("Please enter both a task title and task description.")
+            st.error(
+                "Please enter both a task title and task description."
+            )
         else:
             task = {
                 "id": max(
@@ -257,17 +259,41 @@ elif page == "Create Task":
                 "title": task_title.strip(),
                 "description": task_description.strip(),
                 "type": task_type,
-                "status": "Pending",
+                "status": "Running",
                 "result": None,
+                "error": None,
             }
 
             st.session_state.task_history.append(task)
             st.session_state.active_task = task["id"]
-            st.success("Task created successfully!")
-            st.info(
-                "Your task has been saved in the current session. "
-                "Automated agent execution has not been connected yet."
-            )
+
+            try:
+                with st.spinner(
+                    "AgentForge AI is processing your task..."
+                ):
+                    result = execute_task(
+                        title=task["title"],
+                        description=task["description"],
+                        workflow=task["type"],
+                    )
+
+                task["result"] = result
+                task["status"] = "Completed"
+
+                st.success("Task completed successfully!")
+                st.subheader("🤖 AI-Generated Result")
+                st.markdown(result)
+
+            except Exception as e:
+                task["status"] = "Failed"
+                task["error"] = str(e)
+
+                st.error(
+                    "The task could not be completed. "
+                    "Check your API configuration and deployment logs."
+                )
+
+                st.caption(f"Error details: {e}")
 
 # =========================================================
 # AGENT WORKSPACE
@@ -323,13 +349,17 @@ elif page == "Results":
                 st.write("**Status:**", task["status"])
 
                 if task["result"]:
-                    st.write("**Result:**")
-                    st.write(task["result"])
-                else:
-                    st.info(
-                        "No result is available because AI execution "
-                        "has not been implemented yet."
-                    )
+    st.subheader("AI-Generated Result")
+    st.markdown(task["result"])
+
+elif task.get("error"):
+    st.error("Task execution failed.")
+    st.caption(task["error"])
+
+else:
+    st.info(
+        "No result is available for this task yet."
+    )
 
 # =========================================================
 # ABOUT
