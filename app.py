@@ -1,9 +1,10 @@
-import streamlit as st
-from core.orchestrator import execute_task
+import uuid
+from datetime import datetime, timezone
 
-# =========================================================
-# PAGE CONFIGURATION
-# =========================================================
+import streamlit as st
+
+from core.orchestrator import run_multi_agent_workflow
+from core.storage import save_task, load_tasks, storage_is_configured
 
 st.set_page_config(
     page_title="AgentForge AI",
@@ -11,10 +12,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# =========================================================
-# CUSTOM UI THEME
-# =========================================================
 
 st.markdown(
     """
@@ -30,210 +27,110 @@ st.markdown(
             border: 1px solid #287b91;
             margin-bottom: 24px;
         }
-        .hero h1 {
-            color: #ffffff;
-            font-size: 42px;
-            margin-bottom: 8px;
-        }
-        .hero p {
-            color: #dbeafe;
-            font-size: 17px;
-        }
+        .hero h1 { color: #ffffff; font-size: 42px; margin-bottom: 8px; }
+        .hero p { color: #dbeafe; font-size: 17px; }
         div[data-testid="stMetric"] {
-            background: #142238;
-            border: 1px solid #263b55;
-            padding: 18px;
-            border-radius: 14px;
+            background: #142238; border: 1px solid #263b55;
+            padding: 18px; border-radius: 14px;
         }
         .agent-card {
-            background: #142238;
-            border: 1px solid #263b55;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 12px;
+            background: #142238; border: 1px solid #263b55;
+            border-radius: 14px; padding: 18px; margin-bottom: 12px;
             min-height: 125px;
         }
-        .agent-card h4 {
-            color: #67e8f9;
-            margin-top: 0;
-        }
-        .section-subtitle {
-            color: #a5b4fc;
-            font-size: 16px;
-        }
+        .agent-card h4 { color: #67e8f9; margin-top: 0; }
+        .section-subtitle { color: #a5b4fc; font-size: 16px; }
+        .small-muted { color: #94a3b8; font-size: 13px; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# =========================================================
-# SESSION STATE INITIALIZATION
-# =========================================================
-
+# Keep each browser session's task history separate.
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 if "task_history" not in st.session_state:
-    st.session_state.task_history = []
-
+    st.session_state.task_history = load_tasks(st.session_state.session_id)
 if "active_task" not in st.session_state:
     st.session_state.active_task = None
-
-if "navigate_to_create" not in st.session_state:
-    st.session_state.navigate_to_create = False
-
-# =========================================================
-# SIDEBAR NAVIGATION
-# =========================================================
 
 with st.sidebar:
     st.title("🤖 AgentForge AI")
     st.caption("Intelligent Multi-Agent Platform")
     st.divider()
-
-    page_options = [
-        "Dashboard",
-        "Create Task",
-        "Agent Workspace",
-        "Results",
-        "About",
-    ]
-
-    default_page_index = (
-        page_options.index("Create Task")
-        if st.session_state.navigate_to_create
-        else 0
-    )
-
     page = st.radio(
         "Navigation",
-        page_options,
-        index=default_page_index,
+        ["Dashboard", "Create Task", "Agent Workspace", "Results", "About"],
         key="navigation",
     )
-
-    st.session_state.navigate_to_create = False
     st.divider()
-    st.caption("⚡ AI-powered task orchestration")
-    st.caption("🔧 Model-independent architecture")
+    st.caption("⚡ Multi-stage AI task orchestration")
+    st.caption("🔧 Gemini model adapter")
+    if storage_is_configured():
+        st.success("Supabase storage configured")
+    else:
+        st.info("Session-only storage")
 
-# =========================================================
-# DASHBOARD
-# =========================================================
+agents = [
+    ("🧭 Planner Agent", "Decomposes the request into clear objectives."),
+    ("🔎 Research Agent", "Builds evidence-oriented research outputs."),
+    ("💻 Specialist Agent", "Executes the selected workflow instructions."),
+    ("✅ Review Agent", "Reviews the draft against the user's requirements."),
+]
 
 if page == "Dashboard":
     st.markdown(
         """
         <div class="hero">
             <h1>🤖 AgentForge AI</h1>
-            <p>
-                Turn complex goals into structured workflows
-                using specialized AI agents.
-            </p>
+            <p>Turn complex goals into structured workflows using coordinated AI stages.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
-    total_tasks = len(st.session_state.task_history)
-    completed_tasks = sum(
-        task["status"] == "Completed"
-        for task in st.session_state.task_history
-    )
-    pending_tasks = sum(
-        task["status"] in ("Pending", "Running")
-        for task in st.session_state.task_history
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("Tasks Created", total_tasks)
-    with col2:
-        st.metric("Agents Available", 5)
-    with col3:
-        st.metric("Completed Tasks", completed_tasks)
+    tasks = st.session_state.task_history
+    completed = sum(t.get("status") == "Completed" for t in tasks)
+    failed = sum(t.get("status") == "Failed" for t in tasks)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Tasks Created", len(tasks))
+    c2.metric("Workflow Stages", 4)
+    c3.metric("Completed", completed)
+    c4.metric("Failed", failed)
 
     st.subheader("Your AI Workspace")
     st.markdown(
-        '<p class="section-subtitle">'
-        "Create tasks, organize workflows, and review results."
-        "</p>",
+        '<p class="section-subtitle">Create tasks, monitor agent stages, and inspect reviewed results.</p>',
         unsafe_allow_html=True,
     )
-
     if st.button("＋ Create New Task", type="primary"):
-        st.session_state.navigate_to_create = True
+        st.session_state.navigation = "Create Task"
         st.rerun()
 
-    if pending_tasks:
-        st.info(f"You have {pending_tasks} pending or running task(s).")
-
     st.divider()
-    st.subheader("Available AI Agents")
-
-    agents = [
-        (
-            "🧭 Planner Agent",
-            "Breaks complex goals into smaller, manageable tasks.",
-        ),
-        (
-            "🔎 Research Agent",
-            "Organizes information relevant to the requested task.",
-        ),
-        (
-            "📊 Analyst Agent",
-            "Examines findings and identifies important insights.",
-        ),
-        (
-            "✍️ Writer Agent",
-            "Produces structured content based on task requirements.",
-        ),
-        (
-            "✅ Review Agent",
-            "Checks outputs against the user's requirements.",
-        ),
-    ]
-
-    columns = st.columns(3)
-    for index, (name, description) in enumerate(agents):
-        with columns[index % 3]:
+    st.subheader("Workflow Agents")
+    cols = st.columns(4)
+    for i, (name, description) in enumerate(agents):
+        with cols[i]:
             st.markdown(
-                f"""
-                <div class="agent-card">
-                    <h4>{name}</h4>
-                    <p>{description}</p>
-                </div>
-                """,
+                f'<div class="agent-card"><h4>{name}</h4><p>{description}</p></div>',
                 unsafe_allow_html=True,
             )
-
     st.caption(
-        "AI task generation is connected through the configured model provider. "
-        "The five agent roles are currently represented as workflow concepts."
+        "The workflow performs separate model calls for planning, specialist execution, "
+        "and review. These are coordinated stages, not independently hosted agents."
     )
-
-# =========================================================
-# CREATE TASK
-# =========================================================
 
 elif page == "Create Task":
     st.title("📝 Create a Task")
-    st.write("Describe the goal you want AgentForge AI to accomplish.")
-
+    st.write("Describe the outcome you want AgentForge AI to produce.")
     with st.form("task_form", clear_on_submit=True):
-        task_title = st.text_input(
-            "Task Title",
-            placeholder="Example: Prepare a Python learning roadmap",
-        )
-
-        task_description = st.text_area(
-            "Describe Your Goal",
-            placeholder=(
-                "Explain what you want to accomplish, "
-                "the expected result, and any requirements."
-            ),
+        title = st.text_input("Task Title", placeholder="Example: Prepare a Python learning roadmap")
+        description = st.text_area(
+            "Task Description",
+            placeholder="Include your goal, constraints, expected format, and requirements.",
             height=160,
         )
-
-        task_type = st.selectbox(
+        workflow = st.selectbox(
             "Workflow Type",
             [
                 "General Task",
@@ -243,156 +140,135 @@ elif page == "Create Task":
                 "Content Creation",
             ],
         )
-
-        submitted = st.form_submit_button(
-            "Create Task",
-            type="primary",
-        )
+        submitted = st.form_submit_button("Run Multi-Agent Workflow", type="primary")
 
     if submitted:
-        if not task_title.strip() or not task_description.strip():
+        if not title.strip() or not description.strip():
             st.error("Please enter both a task title and task description.")
         else:
+            task_id = str(uuid.uuid4())
             task = {
-                "id": max(
-                    (
-                        item["id"]
-                        for item in st.session_state.task_history
-                    ),
-                    default=0,
-                ) + 1,
-                "title": task_title.strip(),
-                "description": task_description.strip(),
-                "type": task_type,
+                "id": task_id,
+                "session_id": st.session_state.session_id,
+                "title": title.strip(),
+                "description": description.strip(),
+                "type": workflow,
                 "status": "Running",
+                "created_at": datetime.now(timezone.utc).isoformat(),
                 "result": None,
                 "error": None,
+                "events": [],
             }
+            st.session_state.task_history.insert(0, task)
+            st.session_state.active_task = task_id
 
-            st.session_state.task_history.append(task)
-            st.session_state.active_task = task["id"]
-
+            progress = st.progress(0, text="Preparing workflow…")
+            stage_area = st.status("Starting AgentForge AI workflow", expanded=True)
             try:
-                with st.spinner(
-                    "AgentForge AI is processing your task..."
-                ):
-                    result = execute_task(
+                def on_stage(stage_name, message, percent):
+                    stage_area.write(f"**{stage_name}:** {message}")
+                    progress.progress(percent, text=stage_name)
+
+                with st.spinner("AgentForge AI is coordinating the workflow…"):
+                    result, events = run_multi_agent_workflow(
                         title=task["title"],
                         description=task["description"],
                         workflow=task["type"],
+                        on_stage=on_stage,
                     )
-
                 task["result"] = result
+                task["events"] = events
                 task["status"] = "Completed"
-
-                st.success("Task completed successfully!")
-                st.subheader("🤖 AI-Generated Result")
+                stage_area.update(label="Workflow completed", state="complete", expanded=False)
+                progress.progress(100, text="Completed")
+                st.success("Task completed and reviewed.")
+                st.subheader("🤖 Final Reviewed Result")
                 st.markdown(result)
-
-            except Exception as e:
+                with st.expander("View agent execution log"):
+                    for event in events:
+                        st.markdown(f"**{event.get('stage', 'Stage')}** — {event.get('status', '')}")
+                        if event.get("summary"):
+                            st.write(event["summary"])
+                save_task(task)
+            except Exception as exc:
                 task["status"] = "Failed"
-                task["error"] = str(e)
-
-                st.error(
-                    "The task could not be completed. "
-                    "Check your API configuration and deployment logs."
-                )
-                st.caption(f"Error details: {e}")
-
-# =========================================================
-# AGENT WORKSPACE
-# =========================================================
+                task["error"] = str(exc)
+                stage_area.update(label="Workflow failed", state="error", expanded=True)
+                st.error("The workflow could not be completed.")
+                st.caption(f"Error details: {exc}")
+                save_task(task)
 
 elif page == "Agent Workspace":
     st.title("🧠 Agent Workspace")
-    st.write(
-        "Review the available agents and the tasks waiting in your queue."
-    )
-
-    workspace_agents = [
-        ("🧭 Planner Agent", "Plans and decomposes tasks."),
-        ("🔎 Research Agent", "Organizes research requirements."),
-        ("📊 Analyst Agent", "Analyzes information and findings."),
-        ("✍️ Writer Agent", "Structures content and reports."),
-        ("✅ Review Agent", "Checks output quality and requirements."),
+    st.write("Review the stages used by the current orchestration workflow.")
+    descriptions = [
+        ("Planner Agent", "Creates a structured plan and identifies subtasks."),
+        ("Research Agent", "For research workflows, produces a research-focused draft. It does not independently browse the web unless web search is separately integrated."),
+        ("Specialist Agent", "Generates the main output according to the selected workflow."),
+        ("Review Agent", "Checks completeness, clarity, consistency, and requested format."),
     ]
-
-    for name, description in workspace_agents:
+    for name, description in descriptions:
         with st.expander(name):
             st.write(description)
-            st.caption(
-                "Role available in the prototype; independent agent execution "
-                "is not yet implemented."
-            )
+            st.caption("Runs as a distinct stage in the multi-call workflow.")
 
     st.divider()
-    st.subheader("Task Queue")
-
+    st.subheader("Recent Tasks")
     if not st.session_state.task_history:
         st.info("No tasks yet. Create a task to populate your workspace.")
     else:
-        for task in st.session_state.task_history:
+        for task in st.session_state.task_history[:10]:
             with st.container(border=True):
                 st.write(f"**{task['title']}**")
-                st.write(f"Task ID: {task['id']}")
-                st.write(f"Workflow: {task['type']}")
-                st.write(f"Status: {task['status']}")
-
-# =========================================================
-# RESULTS
-# =========================================================
+                st.write(f"Workflow: {task['type']} · Status: {task['status']}")
+                st.caption(f"Task ID: {task['id']}")
 
 elif page == "Results":
     st.title("📊 Task Results")
-
-    if not st.session_state.task_history:
+    tasks = st.session_state.task_history
+    if not tasks:
         st.info("No tasks available. Create a task first.")
     else:
-        for task in reversed(st.session_state.task_history):
-            with st.expander(f"Task {task['id']}: {task['title']}"):
+        for task in tasks:
+            with st.expander(f"{task['title']} · {task['status']}", expanded=False):
+                st.write("**Workflow:**", task.get("type", "General Task"))
+                st.write("**Created:**", task.get("created_at", "Unknown"))
                 st.write("**Description:**")
-                st.write(task["description"])
-                st.write("**Workflow:**", task["type"])
-                st.write("**Status:**", task["status"])
-
+                st.write(task.get("description", ""))
                 if task.get("result"):
-                    st.subheader("🤖 AI-Generated Result")
+                    st.subheader("Final Reviewed Result")
                     st.markdown(task["result"])
-                elif task.get("error"):
+                if task.get("error"):
                     st.error(task["error"])
-                else:
-                    st.info("No result is available for this task yet.")
-
-# =========================================================
-# ABOUT
-# =========================================================
+                events = task.get("events", [])
+                if events:
+                    st.subheader("Execution Log")
+                    for event in events:
+                        st.markdown(
+                            f"- **{event.get('stage', 'Stage')}** — "
+                            f"{event.get('status', 'completed')}: "
+                            f"{event.get('summary', '')}"
+                        )
 
 elif page == "About":
     st.title("ℹ️ About AgentForge AI")
     st.markdown(
         """
-        AgentForge AI is a model-independent task platform prototype
-        designed to organize user goals into structured workflows.
+        AgentForge AI coordinates multiple AI workflow stages to turn a user request
+        into a planned, generated, and reviewed result.
 
-        **Current features**
-        - Interactive dashboard and task metrics
-        - Task creation with descriptions and workflow categories
-        - Task processing through the configured AI model provider
-        - Agent workspace with five conceptual specialized roles
-        - Task history and generated results within the current session
+        **Included in this upgrade**
+        - Planner, specialist, and review model stages
+        - Per-stage progress and execution log
+        - Task result history
+        - Optional Supabase persistence
+        - Gemini model configuration through Streamlit Secrets
 
         **Current limitations**
-        - Tasks are stored in Streamlit session state and may disappear
-          when the session resets.
-        - The five agent roles are not yet independent autonomous agents.
-        - Research tasks do not automatically browse the web or verify sources.
-        - Persistent database storage is not yet implemented.
-
-        **Planned development**
-        - Implement independent agent orchestration and task delegation
-        - Add persistent storage
-        - Add execution logs, retries, and task-level controls
-        - Add optional web research and source verification
+        - The stages are sequential model calls, not separate autonomous services.
+        - Research tasks do not automatically browse the web or verify external sources.
+        - Without Supabase credentials and the SQL setup, task history is session-only.
+        - Public deployments should add user authentication before storing private user data.
         """
     )
-    st.caption("AgentForge AI | Multi-Agent Platform Prototype")
+    st.caption("AgentForge AI | Multi-stage AI workflow prototype")
