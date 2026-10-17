@@ -353,8 +353,10 @@ elif page == "Results":
                 st.write("**Status:**", task["status"])
 
                 if task["result"]:
-    st.subheader("AI-Generated Result")
+    st.subheader("🤖 AI-Generated Result")
     st.markdown(task["result"])
+else:
+    st.info("No result is available for this task yet.")
 
 elif task.get("error"):
     st.error("Task execution failed.")
