@@ -352,20 +352,34 @@ elif page == "Results":
                 st.write("**Workflow:**", task["type"])
                 st.write("**Status:**", task["status"])
 
-                if task["result"]:
-    st.subheader("🤖 AI-Generated Result")
-    st.markdown(task["result"])
-else:
-    st.info("No result is available for this task yet.")
+                elif page == "Results":
+    st.title("📊 Task Results")
 
-elif task.get("error"):
-    st.error("Task execution failed.")
-    st.caption(task["error"])
+    if not st.session_state.task_history:
+        st.info("No tasks available. Create a task first.")
 
-else:
-    st.info(
-        "No result is available for this task yet."
-    )
+    else:
+        for task in reversed(st.session_state.task_history):
+            with st.expander(
+                f"Task {task['id']}: {task['title']}"
+            ):
+                st.write("**Description:**")
+                st.write(task["description"])
+
+                st.write("**Workflow:**", task["type"])
+                st.write("**Status:**", task["status"])
+
+                if task.get("result"):
+                    st.subheader("🤖 AI-Generated Result")
+                    st.markdown(task["result"])
+
+                elif task.get("error"):
+                    st.error(task["error"])
+
+                else:
+                    st.info(
+                        "No result is available for this task yet."
+                    )
 
 # =========================================================
 # ABOUT
