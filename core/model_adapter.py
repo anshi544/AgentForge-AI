@@ -3,21 +3,14 @@ from google import genai
 
 
 def generate_response(prompt: str) -> str:
-    """Generate a response using the configured Gemini model."""
-
+    """Call the configured Gemini model and return plain text."""
     api_key = st.secrets.get("GEMINI_API_KEY")
-
     if not api_key:
         raise ValueError(
-            "Gemini API key is missing. "
-            "Configure GEMINI_API_KEY in Streamlit Cloud Secrets."
+            "Gemini API key is missing. Add GEMINI_API_KEY to Streamlit Cloud Secrets."
         )
 
-    model = st.secrets.get(
-        "GEMINI_MODEL",
-        "gemini-3.8-flash",
-    )
-
+    model = st.secrets.get("GEMINI_MODEL", "gemini-3.8-flash")
     client = genai.Client(api_key=api_key)
 
     response = client.models.generate_content(
@@ -25,9 +18,9 @@ def generate_response(prompt: str) -> str:
         contents=prompt,
     )
 
-    if not response.text:
+    text = getattr(response, "text", None)
+    if not text or not text.strip():
         raise RuntimeError(
-            "Gemini returned an empty response."
+            "Gemini returned an empty response. Check the model name, API access, and quota."
         )
-
-    return response.text
+    return text.strip()
