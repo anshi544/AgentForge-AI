@@ -329,6 +329,9 @@ if submitted:
 
         st.success("Task created successfully!")
 
-        st.info(
-            "Your task has been saved i
+       st.info(
+"Your task has been saved in the current session. "
+"Automated agent execution has not been connected yet."
+)
+
 ```
