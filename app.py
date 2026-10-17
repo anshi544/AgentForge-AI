@@ -90,6 +90,7 @@ st.session_state.active_task = None
 if "navigate_to_create" not in st.session_state:
 st.session_state.navigate_to_create = False
 
+
 # =========================================================
 
 # SIDEBAR NAVIGATION
