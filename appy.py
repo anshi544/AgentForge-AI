@@ -58,11 +58,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if "task_history" not in st.session_state:
-st.session_state.task_history = []
+    st.session_state.task_history = []
 
 if "active_task" not in st.session_state:
-st.session_state.active_task = None
-
+    st.session_state.active_task = None
 with st.sidebar:
 st.title("🤖 AgentForge AI")
 st.caption("Intelligent Multi-Agent Platform")
