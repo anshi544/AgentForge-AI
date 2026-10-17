@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 from google import genai
 
@@ -21,17 +20,14 @@ def generate_response(prompt: str) -> str:
 
     client = genai.Client(api_key=api_key)
 
-    interaction = client.interactions.create(
+    response = client.models.generate_content(
         model=model,
-        input=prompt,
+        contents=prompt,
     )
 
-    result = interaction.output_text
-
-    if not result:
+    if not response.text:
         raise RuntimeError(
             "Gemini returned an empty response."
         )
 
-    return result
-```
+    return response.text
