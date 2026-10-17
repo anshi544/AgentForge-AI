@@ -1,5 +1,6 @@
 import streamlit as st
 from core.orchestrator import execute_task
+
 # =========================================================
 # PAGE CONFIGURATION
 # =========================================================
@@ -111,7 +112,7 @@ with st.sidebar:
     st.session_state.navigate_to_create = False
     st.divider()
     st.caption("⚡ AI-powered task orchestration")
-    st.caption("🔧 Model-independent prototype")
+    st.caption("🔧 Model-independent architecture")
 
 # =========================================================
 # DASHBOARD
@@ -137,7 +138,7 @@ if page == "Dashboard":
         for task in st.session_state.task_history
     )
     pending_tasks = sum(
-        task["status"] == "Pending"
+        task["status"] in ("Pending", "Running")
         for task in st.session_state.task_history
     )
 
@@ -163,7 +164,7 @@ if page == "Dashboard":
         st.rerun()
 
     if pending_tasks:
-        st.info(f"You have {pending_tasks} pending task(s).")
+        st.info(f"You have {pending_tasks} pending or running task(s).")
 
     st.divider()
     st.subheader("Available AI Agents")
@@ -205,8 +206,8 @@ if page == "Dashboard":
             )
 
     st.caption(
-        "Prototype status: Agents are represented in the interface. "
-        "AI execution has not yet been integrated."
+        "AI task generation is connected through the configured model provider. "
+        "The five agent roles are currently represented as workflow concepts."
     )
 
 # =========================================================
@@ -250,9 +251,7 @@ elif page == "Create Task":
 
     if submitted:
         if not task_title.strip() or not task_description.strip():
-            st.error(
-                "Please enter both a task title and task description."
-            )
+            st.error("Please enter both a task title and task description.")
         else:
             task = {
                 "id": max(
@@ -299,6 +298,7 @@ elif page == "Create Task":
                     "Check your API configuration and deployment logs."
                 )
                 st.caption(f"Error details: {e}")
+
 # =========================================================
 # AGENT WORKSPACE
 # =========================================================
@@ -320,7 +320,10 @@ elif page == "Agent Workspace":
     for name, description in workspace_agents:
         with st.expander(name):
             st.write(description)
-            st.caption("Status: Awaiting AI execution integration")
+            st.caption(
+                "Role available in the prototype; independent agent execution "
+                "is not yet implemented."
+            )
 
     st.divider()
     st.subheader("Task Queue")
@@ -352,34 +355,13 @@ elif page == "Results":
                 st.write("**Workflow:**", task["type"])
                 st.write("**Status:**", task["status"])
 
-                elif page == "Results":
-    st.title("📊 Task Results")
-
-    if not st.session_state.task_history:
-        st.info("No tasks available. Create a task first.")
-
-    else:
-        for task in reversed(st.session_state.task_history):
-            with st.expander(
-                f"Task {task['id']}: {task['title']}"
-            ):
-                st.write("**Description:**")
-                st.write(task["description"])
-
-                st.write("**Workflow:**", task["type"])
-                st.write("**Status:**", task["status"])
-
                 if task.get("result"):
                     st.subheader("🤖 AI-Generated Result")
                     st.markdown(task["result"])
-
                 elif task.get("error"):
                     st.error(task["error"])
-
                 else:
-                    st.info(
-                        "No result is available for this task yet."
-                    )
+                    st.info("No result is available for this task yet.")
 
 # =========================================================
 # ABOUT
@@ -389,27 +371,28 @@ elif page == "About":
     st.title("ℹ️ About AgentForge AI")
     st.markdown(
         """
-        AgentForge AI is a model-independent multi-agent platform
-        prototype designed to organize complex tasks into structured
-        workflows.
+        AgentForge AI is a model-independent task platform prototype
+        designed to organize user goals into structured workflows.
 
         **Current features**
         - Interactive dashboard and task metrics
         - Task creation with descriptions and workflow categories
-        - Agent workspace with five specialized agent roles
-        - Task queue and results interface
+        - Task processing through the configured AI model provider
+        - Agent workspace with five conceptual specialized roles
+        - Task history and generated results within the current session
 
         **Current limitations**
-        - Tasks are stored in Streamlit session state.
-        - Tasks may disappear when the session resets.
-        - AI models and automated agent execution are not connected.
-        - Results are not generated automatically.
+        - Tasks are stored in Streamlit session state and may disappear
+          when the session resets.
+        - The five agent roles are not yet independent autonomous agents.
+        - Research tasks do not automatically browse the web or verify sources.
+        - Persistent database storage is not yet implemented.
 
         **Planned development**
-        - Integrate an AI model provider
-        - Implement agent orchestration and task execution
+        - Implement independent agent orchestration and task delegation
         - Add persistent storage
-        - Display generated results and execution status
+        - Add execution logs, retries, and task-level controls
+        - Add optional web research and source verification
         """
     )
     st.caption("AgentForge AI | Multi-Agent Platform Prototype")
