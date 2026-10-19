@@ -241,9 +241,34 @@ if "active_task" not in st.session_state:
     st.session_state.active_task = None
 
 with st.sidebar:
-    st.title("🤖 AgentForge AI")
-    st.caption("Intelligent Multi-Agent Platform")
+    st.markdown(
+        """
+        <div style="padding: 12px 0 20px 0;">
+            <div style="
+                font-size: 30px;
+                font-weight: 850;
+                background: linear-gradient(90deg, #67e8f9, #a78bfa);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            ">
+                🤖 AgentForge
+            </div>
+            <div style="
+                color: #94a3b8;
+                font-size: 12px;
+                letter-spacing: 1.5px;
+                margin-top: 5px;
+            ">
+                INTELLIGENT AI WORKSPACE
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.divider()
+
+    st.markdown("##### ACCOUNT")
 
     st.write("👤 Signed in as")
     st.caption(st.session_state.auth_user["email"])
@@ -255,20 +280,46 @@ with st.sidebar:
 
     st.divider()
 
+    st.markdown("##### WORKSPACE")
+
     page = st.radio(
         "Navigation",
-        ["Dashboard", "Create Task", "Agent Workspace", "Results", "About"],
+        [
+            "Dashboard",
+            "Create Task",
+            "Agent Workspace",
+            "Results",
+            "About",
+        ],
         key="navigation",
+        label_visibility="collapsed",
     )
 
     st.divider()
-    st.caption("⚡ Multi-stage AI task orchestration")
-    st.caption("🔧 Gemini model adapter")
+
+    st.markdown("##### SYSTEM STATUS")
+
+    st.caption("⚡ Multi-stage AI orchestration")
+    st.caption("🧠 Gemini AI integration")
 
     if storage_is_configured():
-        st.success("Supabase storage configured")
+        st.success("Supabase configured")
     else:
-        st.info("Session-only storage")
+        st.warning("Session-only storage")
+
+    st.markdown(
+        """
+        <div style="
+            padding-top: 20px;
+            color: #64748b;
+            font-size: 11px;
+            text-align: center;
+        ">
+            AGENTFORGE AI · 2026
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 agents = [
     ("🧭 Planner Agent", "Decomposes the request into clear objectives."),
