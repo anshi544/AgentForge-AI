@@ -329,387 +329,208 @@ agents = [
 ]
 
 if page == "Dashboard":
-    st.markdown(
-        """
-        <div class="hero">
-            <p style="font-size:13px;letter-spacing:2px;">
-                YOUR INTELLIGENT WORKSPACE
-            </p>
-            <h1>Welcome to AgentForge AI</h1>
-            <p>
-                Turn complex goals into structured workflows using
-                specialized AI stages. Plan smarter, execute faster,
-                and review every result.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    import pandas as pd
+
+    st.title("📊 Analytics Dashboard")
+    st.caption(
+        "Monitor task execution, workflow distribution, "
+        "and workspace activity."
     )
 
     tasks = st.session_state.task_history
 
+    # Calculate task statistics
     total_tasks = len(tasks)
+
     completed = sum(
-        task.get("status") == "Completed" for task in tasks
+        task.get("status") == "Completed"
+        for task in tasks
     )
+
     failed = sum(
-        task.get("status") == "Failed" for task in tasks
+        task.get("status") == "Failed"
+        for task in tasks
     )
+
     running = sum(
-        task.get("status") == "Running" for task in tasks
+        task.get("status") == "Running"
+        for task in tasks
     )
 
-    st.markdown("## 📊 Workspace Overview")
-    st.caption("A real-time overview of your task history.")
+    completion_rate = (
+        round((completed / total_tasks) * 100, 1)
+        if total_tasks > 0
+        else 0
+    )
 
-    c1, c2, c3, c4 = st.columns(4)
+    # KPI cards
+    st.subheader("Workspace Overview")
 
-    with c1:
-        st.metric("Total Tasks", total_tasks)
+    col1, col2, col3, col4 = st.columns(4)
 
-    with c2:
-        st.metric("Completed", completed)
+    with col1:
+        st.metric(
+            label="Total Tasks",
+            value=total_tasks,
+        )
 
-    with c3:
-        st.metric("In Progress", running)
+    with col2:
+        st.metric(
+            label="Completed",
+            value=completed,
+        )
 
-    with c4:
-        st.metric("Failed", failed)
+    with col3:
+        st.metric(
+            label="Failed",
+            value=failed,
+        )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    with col4:
+        st.metric(
+            label="Completion Rate",
+            value=f"{completion_rate}%",
+        )
 
-    left, right = st.columns([1.5, 1])
+    st.divider()
 
-    with left:
-        st.markdown("### ⚡ Start Creating")
-
-        st.markdown(
-            """
-            <div class="agent-card">
-                <h4>Build a workflow with AI</h4>
-                <p>
-                    Describe a goal, choose a workflow type, and let
-                    AgentForge AI coordinate planning, execution,
-                    and review.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    if not tasks:
+        st.info(
+            "Your analytics will appear here after you create "
+            "your first task."
         )
 
         if st.button(
-            "＋ Create New Task",
+            "＋ Create Your First Task",
             type="primary",
             use_container_width=True,
         ):
             st.session_state.navigation = "Create Task"
             st.rerun()
 
-    with right:
-        st.markdown("### 🧠 Your AI Team")
-
-        st.markdown(
-            """
-            <div class="agent-card">
-                <h4>🧭 Planner Agent</h4>
-                <p>Structures objectives and plans the workflow.</p>
-            </div>
-            <div class="agent-card">
-                <h4>💻 Specialist Agent</h4>
-                <p>Generates the main task output.</p>
-            </div>
-            <div class="agent-card">
-                <h4>✅ Review Agent</h4>
-                <p>Reviews the output for completeness and clarity.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("### 🕘 Recent Tasks")
-
-    if not tasks:
-        st.info(
-            "Your workspace is ready. Create your first task "
-            "to see your activity here."
-        )
     else:
-        for task in tasks[:5]:
-            with st.container(border=True):
-                col1, col2 = st.columns([3, 1])
+        # Prepare chart data
+        status_data = pd.DataFrame({
+            "Status": [
+                "Completed",
+                "Running",
+                "Failed",
+            ],
+            "Tasks": [
+                completed,
+                running,
+                failed,
+            ],
+        })
 
-                with col1:
-                    st.markdown(f"**{task.get('title', 'Untitled Task')}**")
-                    st.caption(
-                        f"Workflow: {task.get('type', 'General Task')}"
-                    )
+        workflow_counts = {}
 
-                with col2:
-                    status = task.get("status", "Unknown")
-
-                    if status == "Completed":
-                        st.success(status)
-                    elif status == "Failed":
-                        st.error(status)
-                    else:
-                        st.info(status)
-
-                if task.get("result"):
-                    with st.expander("View result"):
-                        st.markdown(task["result"])
-
-    st.caption(
-        "AgentForge AI · Multi-stage AI workflow platform"
-    )
-elif page == "Create Task":
-    st.markdown(
-        """
-        <div style="
-            padding: 28px 30px;
-            border-radius: 20px;
-            background: linear-gradient(120deg, #101d36, #20204a, #123b50);
-            border: 1px solid rgba(103,232,249,0.22);
-            margin-bottom: 25px;
-        ">
-            <div style="
-                color: #67e8f9;
-                font-size: 12px;
-                font-weight: 800;
-                letter-spacing: 2px;
-                margin-bottom: 10px;
-            ">AGENTFORGE WORKSPACE</div>
-            <h1 style="color: white; margin: 0; font-size: 32px;">
-                Create your next workflow
-            </h1>
-            <p style="
-                color: #cbd5e1;
-                font-size: 15px;
-                margin: 12px 0 0 0;
-                line-height: 1.7;
-            ">
-                Define your goal. Let specialized AI agents plan, execute,
-                and review the result.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("### 🛠️ Configure your task")
-    st.caption("Provide clear instructions to help the AI agents deliver a useful result.")
-
-    workflow_details = {
-        "General Task": (
-            "🎯",
-            "Flexible workflow",
-            "For general questions, problem-solving, and multi-step tasks.",
-        ),
-        "Research and Report": (
-            "🔎",
-            "Research workflow",
-            "Organize information into a structured report with key findings.",
-        ),
-        "Coding and Debugging": (
-            "💻",
-            "Development workflow",
-            "Work through programming tasks, code explanations, and debugging.",
-        ),
-        "Study Planning": (
-            "📚",
-            "Learning workflow",
-            "Create a structured learning plan based on your academic goals.",
-        ),
-        "Content Creation": (
-            "✍️",
-            "Creative workflow",
-            "Develop structured written content, outlines, and drafts.",
-        ),
-    }
-
-    with st.form("task_form", clear_on_submit=True):
-        title = st.text_input(
-            "Task title",
-            placeholder="e.g., Create a 30-day Python learning roadmap",
-            help="Use a short, descriptive name for your task.",
-        )
-
-        description = st.text_area(
-            "Describe your objective",
-            placeholder=(
-                "Explain what you want to achieve...\n\n"
-                "Include:\n"
-                "• Your goal\n"
-                "• Requirements and constraints\n"
-                "• Expected output format\n"
-                "• Any relevant context"
-            ),
-            height=190,
-            help="Specific instructions generally produce more useful results.",
-        )
-
-        st.markdown("#### Select a workflow")
-
-        workflow = st.selectbox(
-            "Workflow type",
-            list(workflow_details.keys()),
-            format_func=lambda name: (
-                f"{workflow_details[name][0]}  {name}"
-            ),
-            help="Choose the workflow that best matches your objective.",
-        )
-
-        icon, subtitle, details = workflow_details[workflow]
-
-        st.markdown(
-            f"""
-            <div style="
-                padding: 18px 20px;
-                border-radius: 14px;
-                background: rgba(103,232,249,0.06);
-                border: 1px solid rgba(103,232,249,0.25);
-                margin: 8px 0 20px 0;
-            ">
-                <div style="
-                    color: #67e8f9;
-                    font-size: 12px;
-                    font-weight: 800;
-                    letter-spacing: 1px;
-                ">SELECTED WORKFLOW</div>
-                <div style="
-                    color: #f1f5f9;
-                    font-size: 20px;
-                    font-weight: 750;
-                    margin-top: 8px;
-                ">{icon} {workflow}</div>
-                <div style="
-                    color: #a5b4fc;
-                    font-size: 13px;
-                    margin-top: 5px;
-                ">{subtitle}</div>
-                <div style="
-                    color: #cbd5e1;
-                    font-size: 14px;
-                    margin-top: 9px;
-                    line-height: 1.6;
-                ">{details}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        submitted = st.form_submit_button(
-            "🚀 Run Multi-Agent Workflow",
-            type="primary",
-            use_container_width=True,
-        )
-
-    if submitted:
-        if not title.strip() or not description.strip():
-            st.error("Please enter both a task title and task description.")
-        else:
-            task_id = str(uuid.uuid4())
-
-            task = {
-                "id": task_id,
-                "session_id": st.session_state.session_id,
-                "title": title.strip(),
-                "description": description.strip(),
-                "type": workflow,
-                "status": "Running",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "result": None,
-                "error": None,
-                "events": [],
-            }
-
-            st.session_state.task_history.insert(0, task)
-            st.session_state.active_task = task_id
-
-            st.divider()
-            st.markdown("### ⚡ Workflow execution")
-            st.write(f"**Task:** {task['title']}")
-            st.write(f"**Workflow:** {task['type']}")
-
-            progress = st.progress(0, text="Preparing workflow...")
-            stage_area = st.status(
-                "Initializing AgentForge AI",
-                expanded=True,
+        for task in tasks:
+            workflow = task.get(
+                "type",
+                "General Task",
             )
 
-            try:
-                def on_stage(stage_name, message, percent):
-                    stage_area.write(f"**{stage_name}**")
-                    stage_area.write(message)
-                    progress.progress(
-                        max(0, min(int(percent), 100)),
-                        text=f"{stage_name} · {percent}%",
-                    )
+            workflow_counts[workflow] = (
+                workflow_counts.get(workflow, 0) + 1
+            )
 
-                with st.spinner(
-                    "AI agents are coordinating your task..."
-                ):
-                    result, events = run_multi_agent_workflow(
-                        title=task["title"],
-                        description=task["description"],
-                        workflow=task["type"],
-                        on_stage=on_stage,
-                    )
+        workflow_data = pd.DataFrame({
+            "Workflow": list(workflow_counts.keys()),
+            "Tasks": list(workflow_counts.values()),
+        })
 
-                task["result"] = result
-                task["events"] = events
-                task["status"] = "Completed"
+        # Analytics charts
+        st.subheader("Task Analytics")
 
-                stage_area.update(
-                    label="Workflow completed successfully",
-                    state="complete",
-                    expanded=False,
-                )
+        chart_col1, chart_col2 = st.columns(2)
 
-                progress.progress(100, text="Workflow completed")
-                st.success("Task completed and reviewed.")
+        with chart_col1:
+            st.markdown("#### Task Status Distribution")
 
-                st.markdown("### 🤖 Final reviewed result")
+            st.bar_chart(
+                status_data.set_index("Status"),
+                y="Tasks",
+                use_container_width=True,
+            )
 
-                st.markdown(
-                    """
-                    <div style="
-                        padding: 18px;
-                        border-radius: 14px;
-                        background: rgba(15,23,42,0.45);
-                        border: 1px solid rgba(103,232,249,0.2);
-                    ">
-                    """,
-                    unsafe_allow_html=True,
-                )
+            st.caption(
+                "Number of tasks in each execution state."
+            )
 
-                st.markdown(result)
+        with chart_col2:
+            st.markdown("#### Workflow Distribution")
 
-                with st.expander("📋 View agent execution log"):
-                    for event in events:
-                        st.markdown(
-                            f"**{event.get('stage', 'Stage')}** "
-                            f"— {event.get('status', 'completed')}"
-                        )
+            st.bar_chart(
+                workflow_data.set_index("Workflow"),
+                y="Tasks",
+                use_container_width=True,
+            )
 
-                        if event.get("summary"):
-                            st.write(event["summary"])
+            st.caption(
+                "Number of tasks created for each workflow type."
+            )
 
-                save_task(task)
+        st.divider()
 
-            except Exception as exc:
-                task["status"] = "Failed"
-                task["error"] = str(exc)
+        # Recent activity
+        st.subheader("🕒 Recent Task Activity")
 
-                stage_area.update(
-                    label="Workflow failed",
-                    state="error",
-                    expanded=True,
-                )
+        activity_rows = []
 
-                st.error("The workflow could not be completed.")
-                st.caption(f"Error details: {exc}")
+        for task in tasks[:20]:
+            activity_rows.append({
+                "Task": task.get(
+                    "title",
+                    "Untitled Task",
+                ),
+                "Workflow": task.get(
+                    "type",
+                    "General Task",
+                ),
+                "Status": task.get(
+                    "status",
+                    "Unknown",
+                ),
+                "Created At": task.get(
+                    "created_at",
+                    "Unknown",
+                ),
+            })
 
-                save_task(task)
+        activity_df = pd.DataFrame(activity_rows)
+
+        st.dataframe(
+            activity_df,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        st.caption(
+            "Showing up to 20 recent tasks from your workspace."
+        )
+
+        st.divider()
+
+        # Quick action
+        action_col1, action_col2 = st.columns(2)
+
+        with action_col1:
+            if st.button(
+                "＋ Create New Task",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state.navigation = "Create Task"
+                st.rerun()
+
+        with action_col2:
+            if st.button(
+                "📂 View All Results",
+                use_container_width=True,
+            ):
+                st.session_state.navigation = "Results"
+                st.rerun()
 elif page == "Agent Workspace":
     st.title("🧠 Agent Workspace")
     st.write("Review the stages used by the current orchestration workflow.")
