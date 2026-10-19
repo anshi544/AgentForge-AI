@@ -462,32 +462,153 @@ if page == "Dashboard":
         "AgentForge AI · Multi-stage AI workflow platform"
     )
 elif page == "Create Task":
-    st.title("📝 Create a Task")
-    st.write("Describe the outcome you want AgentForge AI to produce.")
+    st.markdown(
+        """
+        <div style="
+            padding: 28px 30px;
+            border-radius: 20px;
+            background: linear-gradient(120deg, #101d36, #20204a, #123b50);
+            border: 1px solid rgba(103,232,249,0.22);
+            margin-bottom: 25px;
+        ">
+            <div style="
+                color: #67e8f9;
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 2px;
+                margin-bottom: 10px;
+            ">AGENTFORGE WORKSPACE</div>
+            <h1 style="color: white; margin: 0; font-size: 32px;">
+                Create your next workflow
+            </h1>
+            <p style="
+                color: #cbd5e1;
+                font-size: 15px;
+                margin: 12px 0 0 0;
+                line-height: 1.7;
+            ">
+                Define your goal. Let specialized AI agents plan, execute,
+                and review the result.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 🛠️ Configure your task")
+    st.caption("Provide clear instructions to help the AI agents deliver a useful result.")
+
+    workflow_details = {
+        "General Task": (
+            "🎯",
+            "Flexible workflow",
+            "For general questions, problem-solving, and multi-step tasks.",
+        ),
+        "Research and Report": (
+            "🔎",
+            "Research workflow",
+            "Organize information into a structured report with key findings.",
+        ),
+        "Coding and Debugging": (
+            "💻",
+            "Development workflow",
+            "Work through programming tasks, code explanations, and debugging.",
+        ),
+        "Study Planning": (
+            "📚",
+            "Learning workflow",
+            "Create a structured learning plan based on your academic goals.",
+        ),
+        "Content Creation": (
+            "✍️",
+            "Creative workflow",
+            "Develop structured written content, outlines, and drafts.",
+        ),
+    }
+
     with st.form("task_form", clear_on_submit=True):
-        title = st.text_input("Task Title", placeholder="Example: Prepare a Python learning roadmap")
+        title = st.text_input(
+            "Task title",
+            placeholder="e.g., Create a 30-day Python learning roadmap",
+            help="Use a short, descriptive name for your task.",
+        )
+
         description = st.text_area(
-            "Task Description",
-            placeholder="Include your goal, constraints, expected format, and requirements.",
-            height=160,
+            "Describe your objective",
+            placeholder=(
+                "Explain what you want to achieve...\n\n"
+                "Include:\n"
+                "• Your goal\n"
+                "• Requirements and constraints\n"
+                "• Expected output format\n"
+                "• Any relevant context"
+            ),
+            height=190,
+            help="Specific instructions generally produce more useful results.",
         )
+
+        st.markdown("#### Select a workflow")
+
         workflow = st.selectbox(
-            "Workflow Type",
-            [
-                "General Task",
-                "Research and Report",
-                "Coding and Debugging",
-                "Study Planning",
-                "Content Creation",
-            ],
+            "Workflow type",
+            list(workflow_details.keys()),
+            format_func=lambda name: (
+                f"{workflow_details[name][0]}  {name}"
+            ),
+            help="Choose the workflow that best matches your objective.",
         )
-        submitted = st.form_submit_button("Run Multi-Agent Workflow", type="primary")
+
+        icon, subtitle, details = workflow_details[workflow]
+
+        st.markdown(
+            f"""
+            <div style="
+                padding: 18px 20px;
+                border-radius: 14px;
+                background: rgba(103,232,249,0.06);
+                border: 1px solid rgba(103,232,249,0.25);
+                margin: 8px 0 20px 0;
+            ">
+                <div style="
+                    color: #67e8f9;
+                    font-size: 12px;
+                    font-weight: 800;
+                    letter-spacing: 1px;
+                ">SELECTED WORKFLOW</div>
+                <div style="
+                    color: #f1f5f9;
+                    font-size: 20px;
+                    font-weight: 750;
+                    margin-top: 8px;
+                ">{icon} {workflow}</div>
+                <div style="
+                    color: #a5b4fc;
+                    font-size: 13px;
+                    margin-top: 5px;
+                ">{subtitle}</div>
+                <div style="
+                    color: #cbd5e1;
+                    font-size: 14px;
+                    margin-top: 9px;
+                    line-height: 1.6;
+                ">{details}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        submitted = st.form_submit_button(
+            "🚀 Run Multi-Agent Workflow",
+            type="primary",
+            use_container_width=True,
+        )
 
     if submitted:
         if not title.strip() or not description.strip():
             st.error("Please enter both a task title and task description.")
         else:
             task_id = str(uuid.uuid4())
+
             task = {
                 "id": task_id,
                 "session_id": st.session_state.session_id,
@@ -500,45 +621,95 @@ elif page == "Create Task":
                 "error": None,
                 "events": [],
             }
+
             st.session_state.task_history.insert(0, task)
             st.session_state.active_task = task_id
 
-            progress = st.progress(0, text="Preparing workflow…")
-            stage_area = st.status("Starting AgentForge AI workflow", expanded=True)
+            st.divider()
+            st.markdown("### ⚡ Workflow execution")
+            st.write(f"**Task:** {task['title']}")
+            st.write(f"**Workflow:** {task['type']}")
+
+            progress = st.progress(0, text="Preparing workflow...")
+            stage_area = st.status(
+                "Initializing AgentForge AI",
+                expanded=True,
+            )
+
             try:
                 def on_stage(stage_name, message, percent):
-                    stage_area.write(f"**{stage_name}:** {message}")
-                    progress.progress(percent, text=stage_name)
+                    stage_area.write(f"**{stage_name}**")
+                    stage_area.write(message)
+                    progress.progress(
+                        max(0, min(int(percent), 100)),
+                        text=f"{stage_name} · {percent}%",
+                    )
 
-                with st.spinner("AgentForge AI is coordinating the workflow…"):
+                with st.spinner(
+                    "AI agents are coordinating your task..."
+                ):
                     result, events = run_multi_agent_workflow(
                         title=task["title"],
                         description=task["description"],
                         workflow=task["type"],
                         on_stage=on_stage,
                     )
+
                 task["result"] = result
                 task["events"] = events
                 task["status"] = "Completed"
-                stage_area.update(label="Workflow completed", state="complete", expanded=False)
-                progress.progress(100, text="Completed")
+
+                stage_area.update(
+                    label="Workflow completed successfully",
+                    state="complete",
+                    expanded=False,
+                )
+
+                progress.progress(100, text="Workflow completed")
                 st.success("Task completed and reviewed.")
-                st.subheader("🤖 Final Reviewed Result")
+
+                st.markdown("### 🤖 Final reviewed result")
+
+                st.markdown(
+                    """
+                    <div style="
+                        padding: 18px;
+                        border-radius: 14px;
+                        background: rgba(15,23,42,0.45);
+                        border: 1px solid rgba(103,232,249,0.2);
+                    ">
+                    """,
+                    unsafe_allow_html=True,
+                )
+
                 st.markdown(result)
-                with st.expander("View agent execution log"):
+
+                with st.expander("📋 View agent execution log"):
                     for event in events:
-                        st.markdown(f"**{event.get('stage', 'Stage')}** — {event.get('status', '')}")
+                        st.markdown(
+                            f"**{event.get('stage', 'Stage')}** "
+                            f"— {event.get('status', 'completed')}"
+                        )
+
                         if event.get("summary"):
                             st.write(event["summary"])
+
                 save_task(task)
+
             except Exception as exc:
                 task["status"] = "Failed"
                 task["error"] = str(exc)
-                stage_area.update(label="Workflow failed", state="error", expanded=True)
+
+                stage_area.update(
+                    label="Workflow failed",
+                    state="error",
+                    expanded=True,
+                )
+
                 st.error("The workflow could not be completed.")
                 st.caption(f"Error details: {exc}")
-                save_task(task)
 
+                save_task(task)
 elif page == "Agent Workspace":
     st.title("🧠 Agent Workspace")
     st.write("Review the stages used by the current orchestration workflow.")
