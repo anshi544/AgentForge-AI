@@ -5,6 +5,12 @@ import streamlit as st
 
 from core.orchestrator import run_multi_agent_workflow
 from core.storage import save_task, load_tasks, storage_is_configured
+from core.auth import (
+    init_auth_state,
+    get_authenticated_client,
+    show_auth_page,
+    logout,
+)
 
 st.set_page_config(
     page_title="AgentForge AI",
@@ -46,17 +52,46 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Keep each browser session's task history separate.
-if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
+# Initialize authentication state.
+init_auth_state()
+
+# Require authentication before displaying the workspace.
+authenticated_client = get_authenticated_client()
+
+if authenticated_client is None:
+    show_auth_page()
+    st.stop()
+
+# Initialize task state for the authenticated user.
+user = st.session_state.auth_user
+st.session_state.session_id = user["id"]
+
 if "task_history" not in st.session_state:
-    st.session_state.task_history = load_tasks(st.session_state.session_id)
+    st.session_state.task_history = load_tasks()
+
 if "active_task" not in st.session_state:
     st.session_state.active_task = None
 
 with st.sidebar:
     st.title("🤖 AgentForge AI")
     st.caption("Intelligent Multi-Agent Platform")
+    st.divider()
+
+    st.write("👤 Signed in as")
+    st.caption(st.session_state.auth_user["email"])
+
+    if st.button("🚪 Log Out", use_container_width=True):
+        logout()
+        st.session_state.navigation = "Dashboard"
+        st.rerun()
+
+    st.divider()
+
+    if st.button("🚪 Log Out", use_container_width=True):
+        logout()
+        st.session_state.navigation = "Dashboard"
+        st.rerun()
+
     st.divider()
     page = st.radio(
         "Navigation",
@@ -233,7 +268,13 @@ elif page == "Results":
 
     with col2:
         if st.button("🔄 Refresh History"):
-            saved_tasks = load_tasks(st.session_state.session_id)
+    saved_tasks = load_tasks()
+
+    if saved_tasks:
+        st.session_state.task_history = saved_tasks
+        st.success("Task history refreshed.")
+    else:
+        st.info("No saved tasks found for this session.")
 
             if saved_tasks:
                 st.session_state.task_history = saved_tasks
