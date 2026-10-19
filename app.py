@@ -281,44 +281,135 @@ if page == "Dashboard":
     st.markdown(
         """
         <div class="hero">
-            <h1>🤖 AgentForge AI</h1>
-            <p>Turn complex goals into structured workflows using coordinated AI stages.</p>
+            <p style="font-size:13px;letter-spacing:2px;">
+                YOUR INTELLIGENT WORKSPACE
+            </p>
+            <h1>Welcome to AgentForge AI</h1>
+            <p>
+                Turn complex goals into structured workflows using
+                specialized AI stages. Plan smarter, execute faster,
+                and review every result.
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
     tasks = st.session_state.task_history
-    completed = sum(t.get("status") == "Completed" for t in tasks)
-    failed = sum(t.get("status") == "Failed" for t in tasks)
+
+    total_tasks = len(tasks)
+    completed = sum(
+        task.get("status") == "Completed" for task in tasks
+    )
+    failed = sum(
+        task.get("status") == "Failed" for task in tasks
+    )
+    running = sum(
+        task.get("status") == "Running" for task in tasks
+    )
+
+    st.markdown("## 📊 Workspace Overview")
+    st.caption("A real-time overview of your task history.")
+
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Tasks Created", len(tasks))
-    c2.metric("Workflow Stages", 4)
-    c3.metric("Completed", completed)
-    c4.metric("Failed", failed)
 
-    st.subheader("Your AI Workspace")
-    st.markdown(
-        '<p class="section-subtitle">Create tasks, monitor agent stages, and inspect reviewed results.</p>',
-        unsafe_allow_html=True,
-    )
-    if st.button("＋ Create New Task", type="primary"):
-        st.session_state.navigation = "Create Task"
-        st.rerun()
+    with c1:
+        st.metric("Total Tasks", total_tasks)
 
-    st.divider()
-    st.subheader("Workflow Agents")
-    cols = st.columns(4)
-    for i, (name, description) in enumerate(agents):
-        with cols[i]:
-            st.markdown(
-                f'<div class="agent-card"><h4>{name}</h4><p>{description}</p></div>',
-                unsafe_allow_html=True,
-            )
+    with c2:
+        st.metric("Completed", completed)
+
+    with c3:
+        st.metric("In Progress", running)
+
+    with c4:
+        st.metric("Failed", failed)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    left, right = st.columns([1.5, 1])
+
+    with left:
+        st.markdown("### ⚡ Start Creating")
+
+        st.markdown(
+            """
+            <div class="agent-card">
+                <h4>Build a workflow with AI</h4>
+                <p>
+                    Describe a goal, choose a workflow type, and let
+                    AgentForge AI coordinate planning, execution,
+                    and review.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        if st.button(
+            "＋ Create New Task",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.navigation = "Create Task"
+            st.rerun()
+
+    with right:
+        st.markdown("### 🧠 Your AI Team")
+
+        st.markdown(
+            """
+            <div class="agent-card">
+                <h4>🧭 Planner Agent</h4>
+                <p>Structures objectives and plans the workflow.</p>
+            </div>
+            <div class="agent-card">
+                <h4>💻 Specialist Agent</h4>
+                <p>Generates the main task output.</p>
+            </div>
+            <div class="agent-card">
+                <h4>✅ Review Agent</h4>
+                <p>Reviews the output for completeness and clarity.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("### 🕘 Recent Tasks")
+
+    if not tasks:
+        st.info(
+            "Your workspace is ready. Create your first task "
+            "to see your activity here."
+        )
+    else:
+        for task in tasks[:5]:
+            with st.container(border=True):
+                col1, col2 = st.columns([3, 1])
+
+                with col1:
+                    st.markdown(f"**{task.get('title', 'Untitled Task')}**")
+                    st.caption(
+                        f"Workflow: {task.get('type', 'General Task')}"
+                    )
+
+                with col2:
+                    status = task.get("status", "Unknown")
+
+                    if status == "Completed":
+                        st.success(status)
+                    elif status == "Failed":
+                        st.error(status)
+                    else:
+                        st.info(status)
+
+                if task.get("result"):
+                    with st.expander("View result"):
+                        st.markdown(task["result"])
+
     st.caption(
-        "The workflow performs separate model calls for planning, specialist execution, "
-        "and review. These are coordinated stages, not independently hosted agents."
+        "AgentForge AI · Multi-stage AI workflow platform"
     )
-
 elif page == "Create Task":
     st.title("📝 Create a Task")
     st.write("Describe the outcome you want AgentForge AI to produce.")
