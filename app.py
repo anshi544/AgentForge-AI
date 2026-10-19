@@ -80,20 +80,23 @@ with st.sidebar:
     st.write("👤 Signed in as")
     st.caption(st.session_state.auth_user["email"])
 
-       if st.button("🚪 Log Out", use_container_width=True):
+    if st.button("🚪 Log Out", use_container_width=True):
         logout()
         st.session_state.navigation = "Dashboard"
         st.rerun()
 
     st.divider()
+
     page = st.radio(
         "Navigation",
         ["Dashboard", "Create Task", "Agent Workspace", "Results", "About"],
         key="navigation",
     )
+
     st.divider()
     st.caption("⚡ Multi-stage AI task orchestration")
     st.caption("🔧 Gemini model adapter")
+
     if storage_is_configured():
         st.success("Supabase storage configured")
     else:
