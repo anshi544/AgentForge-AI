@@ -80,14 +80,7 @@ with st.sidebar:
     st.write("👤 Signed in as")
     st.caption(st.session_state.auth_user["email"])
 
-    if st.button("🚪 Log Out", use_container_width=True):
-        logout()
-        st.session_state.navigation = "Dashboard"
-        st.rerun()
-
-    st.divider()
-
-    if st.button("🚪 Log Out", use_container_width=True):
+       if st.button("🚪 Log Out", use_container_width=True):
         logout()
         st.session_state.navigation = "Dashboard"
         st.rerun()
@@ -268,13 +261,7 @@ elif page == "Results":
 
     with col2:
         if st.button("🔄 Refresh History"):
-    saved_tasks = load_tasks()
-
-    if saved_tasks:
-        st.session_state.task_history = saved_tasks
-        st.success("Task history refreshed.")
-    else:
-        st.info("No saved tasks found for this session.")
+            saved_tasks = load_tasks()
 
             if saved_tasks:
                 st.session_state.task_history = saved_tasks
@@ -283,23 +270,39 @@ elif page == "Results":
                 st.info("No saved tasks found for this session.")
 
     tasks = st.session_state.task_history
+
     if not tasks:
         st.info("No tasks available. Create a task first.")
     else:
         for task in tasks:
-            with st.expander(f"{task['title']} · {task['status']}", expanded=False):
-                st.write("**Workflow:**", task.get("type", "General Task"))
-                st.write("**Created:**", task.get("created_at", "Unknown"))
+            with st.expander(
+                f"{task['title']} · {task['status']}",
+                expanded=False,
+            ):
+                st.write(
+                    "**Workflow:**",
+                    task.get("type", "General Task"),
+                )
+                st.write(
+                    "**Created:**",
+                    task.get("created_at", "Unknown"),
+                )
+
                 st.write("**Description:**")
                 st.write(task.get("description", ""))
+
                 if task.get("result"):
                     st.subheader("Final Reviewed Result")
                     st.markdown(task["result"])
+
                 if task.get("error"):
                     st.error(task["error"])
+
                 events = task.get("events", [])
+
                 if events:
                     st.subheader("Execution Log")
+
                     for event in events:
                         st.markdown(
                             f"- **{event.get('stage', 'Stage')}** — "
