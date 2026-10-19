@@ -1,28 +1,33 @@
 import streamlit as st
-from supabase import create_client
+
+from core.auth import get_authenticated_client
 
 
 def storage_is_configured() -> bool:
+    """Check whether Supabase credentials are configured."""
     try:
-        return bool(st.secrets.get("SUPABASE_URL") and st.secrets.get("SUPABASE_KEY"))
+        return bool(
+            st.secrets.get("SUPABASE_URL")
+            and st.secrets.get("SUPABASE_KEY")
+        )
     except Exception:
         return False
 
 
-def _client():
-    if not storage_is_configured():
-        return None
-    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+def save_task(task: dict) -> bool:
+    """Save a task for the currently authenticated user."""
+    client = get_authenticated_client()
 
-
-def save_task(task: dict) -> None:
-    """Persist a task if Supabase is configured; otherwise keep it in session state."""
-    client = _client()
     if client is None:
-        return
+        st.warning("Log in to save tasks to your account.")
+        return False
+
+    user = st.session_state.auth_user
+
     record = {
         "id": task["id"],
-        "session_id": task["session_id"],
+        "session_id": st.session_state.session_id,
+        "user_id": user["id"],
         "title": task["title"],
         "description": task["description"],
         "workflow": task["type"],
@@ -32,28 +37,36 @@ def save_task(task: dict) -> None:
         "events": task.get("events", []),
         "created_at": task.get("created_at"),
     }
+
     try:
         client.table("agentforge_tasks").upsert(record).execute()
+        return True
     except Exception as exc:
-        # Don't hide the task result if persistence is temporarily unavailable.
-        st.warning(f"Task ran, but saving to Supabase failed: {exc}")
+        st.error(f"Task ran, but saving failed: {exc}")
+        return False
 
 
-def load_tasks(session_id: str) -> list:
-    """Load tasks for this browser session when Supabase is configured."""
-    client = _client()
+def load_tasks(session_id: str = None) -> list:
+    """Load tasks belonging only to the authenticated user."""
+    client = get_authenticated_client()
+
     if client is None:
         return []
+
+    user = st.session_state.auth_user
+
     try:
-        response = (
+        query = (
             client.table("agentforge_tasks")
             .select("*")
-            .eq("session_id", session_id)
+            .eq("user_id", user["id"])
             .order("created_at", desc=True)
             .limit(50)
-            .execute()
         )
+
+        response = query.execute()
         rows = response.data or []
+
         return [
             {
                 "id": row["id"],
@@ -69,6 +82,7 @@ def load_tasks(session_id: str) -> list:
             }
             for row in rows
         ]
-    except Exception:
-        # Missing table / credentials should not prevent the app from starting.
+
+    except Exception as exc:
+        st.error(f"Unable to load saved tasks: {exc}")
         return []
