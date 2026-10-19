@@ -22,36 +22,204 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+        /* Main application background */
         .stApp {
-            background: linear-gradient(135deg, #08111f, #101c33);
+            background:
+                radial-gradient(
+                    ellipse at top left,
+                    rgba(14, 116, 144, 0.18),
+                    transparent 40%
+                ),
+                linear-gradient(135deg, #07111f, #0c1729 55%, #101c33);
             color: #f1f5f9;
         }
+
+        /* Main content spacing */
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 3rem;
+            max-width: 1450px;
+        }
+
+        /* Hero section */
         .hero {
-            padding: 30px;
-            border-radius: 18px;
-            background: linear-gradient(120deg, #12345a, #155e75);
-            border: 1px solid #287b91;
-            margin-bottom: 24px;
+            padding: 38px;
+            border-radius: 24px;
+            background:
+                linear-gradient(
+                    120deg,
+                    rgba(30, 64, 110, 0.96),
+                    rgba(8, 145, 178, 0.75)
+                );
+            border: 1px solid rgba(103, 232, 249, 0.3);
+            margin-bottom: 28px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
         }
-        .hero h1 { color: #ffffff; font-size: 42px; margin-bottom: 8px; }
-        .hero p { color: #dbeafe; font-size: 17px; }
+
+        .hero h1 {
+            color: #ffffff;
+            font-size: clamp(30px, 4vw, 46px);
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            color: #e0f2fe;
+            font-size: 17px;
+            line-height: 1.7;
+        }
+
+        /* Metric cards */
         div[data-testid="stMetric"] {
-            background: #142238; border: 1px solid #263b55;
-            padding: 18px; border-radius: 14px;
+            background: linear-gradient(145deg, #14263e, #101e32);
+            border: 1px solid #263e59;
+            padding: 22px;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transition: border-color 0.2s ease;
         }
+
+        div[data-testid="stMetric"]:hover {
+            border-color: #22d3ee;
+        }
+
+        div[data-testid="stMetricLabel"] {
+            color: #a5b4fc;
+        }
+
+        div[data-testid="stMetricValue"] {
+            color: #f8fafc;
+            font-weight: 750;
+        }
+
+        /* Workflow agent cards */
         .agent-card {
-            background: #142238; border: 1px solid #263b55;
-            border-radius: 14px; padding: 18px; margin-bottom: 12px;
-            min-height: 125px;
+            background: linear-gradient(145deg, #14263e, #101e32);
+            border: 1px solid #263e59;
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 14px;
+            min-height: 145px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transition:
+                transform 0.2s ease,
+                border-color 0.2s ease;
         }
-        .agent-card h4 { color: #67e8f9; margin-top: 0; }
-        .section-subtitle { color: #a5b4fc; font-size: 16px; }
-        .small-muted { color: #94a3b8; font-size: 13px; }
+
+        .agent-card:hover {
+            transform: translateY(-3px);
+            border-color: #22d3ee;
+        }
+
+        .agent-card h4 {
+            color: #67e8f9;
+            margin-top: 0;
+            font-size: 17px;
+        }
+
+        .agent-card p {
+            color: #cbd5e1;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* Section descriptions */
+        .section-subtitle {
+            color: #a5b4fc;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .small-muted {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* Sidebar */
+        section[data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #0b1627, #0d1b30);
+            border-right: 1px solid #20344d;
+        }
+
+        section[data-testid="stSidebar"] h1 {
+            color: #67e8f9;
+            font-weight: 800;
+        }
+
+        /* Buttons */
+        .stButton > button,
+        .stDownloadButton > button {
+            border-radius: 11px;
+            font-weight: 650;
+            min-height: 42px;
+            transition: all 0.2s ease;
+        }
+
+        .stButton > button:hover,
+        .stDownloadButton > button:hover {
+            border-color: #22d3ee;
+            color: #67e8f9;
+        }
+
+        /* Inputs */
+        .stTextInput input,
+        .stTextArea textarea {
+            background-color: #101e32;
+            color: #f1f5f9;
+            border-radius: 10px;
+            border-color: #344a65;
+        }
+
+        /* Select boxes */
+        div[data-baseweb="select"] > div {
+            background-color: #101e32;
+            border-color: #344a65;
+            border-radius: 10px;
+        }
+
+        /* Expanders */
+        div[data-testid="stExpander"] {
+            background: rgba(20, 34, 56, 0.55);
+            border: 1px solid #263b55;
+            border-radius: 14px;
+        }
+
+        /* Progress bars */
+        div[data-testid="stProgressBar"] > div > div {
+            background: linear-gradient(90deg, #0891b2, #67e8f9);
+        }
+
+        /* Separators */
+        hr {
+            border-color: #263b55;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .block-container {
+                padding-top: 1rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .hero {
+                padding: 24px;
+                border-radius: 18px;
+            }
+
+            .hero h1 {
+                font-size: 30px;
+            }
+
+            .agent-card {
+                min-height: auto;
+            }
+        }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 # Initialize authentication state.
 init_auth_state()
 
