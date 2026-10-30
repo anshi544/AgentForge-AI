@@ -120,12 +120,15 @@ def logout():
 
 
 def show_auth_page():
-    """Display login and registration forms."""
+    """Display login, registration, and password recovery forms."""
+
     init_auth_state()
 
     st.title("🤖 AgentForge AI")
     st.subheader("Your AI workspace starts here")
-    st.write("Sign in or create an account to access your workspace.")
+    st.write(
+        "Sign in, create an account, or recover your password."
+    )
 
     try:
         client = get_auth_client()
@@ -133,16 +136,131 @@ def show_auth_page():
         st.error(str(exc))
         st.stop()
 
-    login_tab, signup_tab = st.tabs(["Log In", "Create Account"])
+    # --------------------------------------------------
+    # PASSWORD RECOVERY LINK HANDLING
+    # --------------------------------------------------
+
+    query_params = st.query_params
+
+    token_hash = query_params.get("token_hash")
+    recovery_type = query_params.get("type")
+
+    if token_hash and recovery_type == "recovery":
+
+        st.subheader("🔐 Reset Your Password")
+
+        if "recovery_verified" not in st.session_state:
+            st.session_state.recovery_verified = False
+
+        if not st.session_state.recovery_verified:
+
+            try:
+                response = client.auth.verify_otp({
+                    "token_hash": token_hash,
+                    "type": "recovery",
+                })
+
+                if set_authenticated_session(response):
+                    st.session_state.recovery_verified = True
+                    st.rerun()
+                else:
+                    st.error(
+                        "Password recovery link could not be verified. "
+                        "Please request a new link."
+                    )
+                    st.stop()
+
+            except Exception:
+                st.error(
+                    "This password recovery link is invalid or expired. "
+                    "Please request a new one."
+                )
+                st.stop()
+
+        with st.form("reset_password_form"):
+
+            new_password = st.text_input(
+                "New Password",
+                type="password",
+            )
+
+            confirm_password = st.text_input(
+                "Confirm New Password",
+                type="password",
+            )
+
+            reset_clicked = st.form_submit_button(
+                "Update Password",
+                type="primary",
+                use_container_width=True,
+            )
+
+        if reset_clicked:
+
+            if len(new_password) < 8:
+                st.error(
+                    "Password must contain at least 8 characters."
+                )
+
+            elif new_password != confirm_password:
+                st.error("Passwords do not match.")
+
+            else:
+                try:
+                    client.auth.update_user({
+                        "password": new_password
+                    })
+
+                    st.session_state.recovery_verified = False
+
+                    clear_auth_state()
+
+                    st.query_params.clear()
+
+                    st.success(
+                        "Password updated successfully! "
+                        "Please log in using your new password."
+                    )
+
+                    st.rerun()
+
+                except Exception:
+                    st.error(
+                        "Unable to update your password. "
+                        "Please try again."
+                    )
+
+        st.stop()
+
+    # --------------------------------------------------
+    # AUTHENTICATION TABS
+    # --------------------------------------------------
+
+    login_tab, signup_tab, forgot_tab = st.tabs([
+        "Log In",
+        "Create Account",
+        "Forgot Password?",
+    ])
+
+    # --------------------------------------------------
+    # LOGIN
+    # --------------------------------------------------
 
     with login_tab:
+
         with st.form("agentforge_login"):
-            email = st.text_input("Email address", key="login_email")
+
+            email = st.text_input(
+                "Email address",
+                key="login_email",
+            )
+
             password = st.text_input(
                 "Password",
                 type="password",
                 key="login_password",
             )
+
             login_clicked = st.form_submit_button(
                 "Log In",
                 type="primary",
@@ -150,43 +268,60 @@ def show_auth_page():
             )
 
         if login_clicked:
+
             if not email.strip() or not password:
-                st.error("Enter your email address and password.")
+
+                st.error(
+                    "Enter your email address and password."
+                )
+
             else:
+
                 try:
-                    response = client.auth.sign_in_with_password(
-                        {
-                            "email": email.strip(),
-                            "password": password,
-                        }
-                    )
+
+                    response = client.auth.sign_in_with_password({
+                        "email": email.strip(),
+                        "password": password,
+                    })
 
                     if set_authenticated_session(response):
+
                         st.success("Login successful!")
                         st.rerun()
+
                     else:
+
                         st.error(
                             "No authenticated session was returned. "
                             "Verify your email address and try again."
                         )
 
                 except Exception:
+
                     st.error(
-                        "Login failed. Check your credentials and ensure "
-                        "your email address has been verified."
+                        "Login failed. Check your credentials and "
+                        "ensure your email address has been verified."
                     )
 
+    # --------------------------------------------------
+    # SIGNUP
+    # --------------------------------------------------
+
     with signup_tab:
+
         with st.form("agentforge_signup"):
+
             new_email = st.text_input(
                 "Email address",
                 key="signup_email",
             )
+
             new_password = st.text_input(
                 "Password",
                 type="password",
                 key="signup_password",
             )
+
             confirm_password = st.text_input(
                 "Confirm password",
                 type="password",
@@ -200,34 +335,103 @@ def show_auth_page():
             )
 
         if signup_clicked:
+
             if not new_email.strip():
+
                 st.error("Enter your email address.")
+
             elif len(new_password) < 8:
-                st.error("Use a password with at least 8 characters.")
+
+                st.error(
+                    "Use a password with at least 8 characters."
+                )
+
             elif new_password != confirm_password:
+
                 st.error("The passwords do not match.")
+
             else:
+
                 try:
-                    response = client.auth.sign_up(
-                        {
-                            "email": new_email.strip(),
-                            "password": new_password,
-                        }
-                    )
+
+                    response = client.auth.sign_up({
+                        "email": new_email.strip(),
+                        "password": new_password,
+                    })
 
                     if set_authenticated_session(response):
+
                         st.success("Account created successfully!")
                         st.rerun()
+
                     else:
+
                         st.success(
                             "Registration submitted! Check your inbox "
-                            "for the Supabase verification email. Verify "
-                            "your address before logging in."
+                            "for the Supabase verification email."
                         )
 
                 except Exception:
+
                     st.error(
-                        "Account creation failed. Check the email address "
-                        "and password requirements, or inspect your "
-                        "Supabase Auth logs."
+                        "Account creation failed. Check the email "
+                        "address and password requirements."
+                    )
+
+    # --------------------------------------------------
+    # FORGOT PASSWORD
+    # --------------------------------------------------
+
+    with forgot_tab:
+
+        st.subheader("🔑 Recover Your Account")
+
+        st.write(
+            "Enter your registered email address. "
+            "We will send you a password-reset link."
+        )
+
+        with st.form("agentforge_forgot_password"):
+
+            recovery_email = st.text_input(
+                "Registered Email Address",
+                key="recovery_email",
+            )
+
+            recovery_clicked = st.form_submit_button(
+                "Send Reset Link",
+                type="primary",
+                use_container_width=True,
+            )
+
+        if recovery_clicked:
+
+            if not recovery_email.strip():
+
+                st.error("Please enter your registered email address.")
+
+            else:
+
+                try:
+
+                    client.auth.reset_password_for_email(
+                        recovery_email.strip(),
+                        {
+                            "redirect_to": (
+                                "https://agentforge-ai-lvsp6zbtpm3gcln8rcvmmy.streamlit.app/"
+                            )
+                        },
+                    )
+
+                    st.success(
+                        "If an account exists for that email, "
+                        "a password-reset link has been sent. "
+                        "Please check your inbox and spam folder."
+                    )
+
+                except Exception:
+
+                    st.error(
+                        "Unable to send the reset email. "
+                        "Please try again later."
                     )
