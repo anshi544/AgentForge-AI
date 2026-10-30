@@ -415,13 +415,11 @@ def show_auth_page():
                 try:
 
                     client.auth.reset_password_for_email(
-                        recovery_email.strip(),
-                        {
-                            "redirect_to": (
-                                "https://agentforge-ai-lvsp6zbtpm3gcln8rcvmmy.streamlit.app/"
-                            )
-                        },
-                    )
+    recovery_email.strip(),
+    {
+        "redirect_to": "https://agentforge-ai-lvsp6zbtpm3gcln8rcvmmy.streamlit.app/"
+    },
+)
 
                     st.success(
                         "If an account exists for that email, "
