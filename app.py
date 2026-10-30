@@ -327,7 +327,6 @@ agents = [
     ("💻 Specialist Agent", "Executes the selected workflow instructions."),
     ("✅ Review Agent", "Reviews the draft against the user's requirements."),
 ]
-
 if page == "Dashboard":
     import pandas as pd
 
@@ -363,7 +362,7 @@ if page == "Dashboard":
         else 0
     )
 
-    # KPI cards
+    # KPI Cards
     st.subheader("Workspace Overview")
 
     col1, col2, col3, col4 = st.columns(4)
@@ -395,6 +394,7 @@ if page == "Dashboard":
     st.divider()
 
     if not tasks:
+
         st.info(
             "Your analytics will appear here after you create "
             "your first task."
@@ -409,6 +409,7 @@ if page == "Dashboard":
             st.rerun()
 
     else:
+
         # Prepare chart data
         status_data = pd.DataFrame({
             "Status": [
@@ -426,6 +427,7 @@ if page == "Dashboard":
         workflow_counts = {}
 
         for task in tasks:
+
             workflow = task.get(
                 "type",
                 "General Task",
@@ -446,6 +448,7 @@ if page == "Dashboard":
         chart_col1, chart_col2 = st.columns(2)
 
         with chart_col1:
+
             st.markdown("#### Task Status Distribution")
 
             st.bar_chart(
@@ -459,6 +462,7 @@ if page == "Dashboard":
             )
 
         with chart_col2:
+
             st.markdown("#### Workflow Distribution")
 
             st.bar_chart(
@@ -479,6 +483,7 @@ if page == "Dashboard":
         activity_rows = []
 
         for task in tasks[:20]:
+
             activity_rows.append({
                 "Task": task.get(
                     "title",
@@ -512,10 +517,11 @@ if page == "Dashboard":
 
         st.divider()
 
-        # Quick action
+        # Quick actions
         action_col1, action_col2 = st.columns(2)
 
         with action_col1:
+
             if st.button(
                 "＋ Create New Task",
                 type="primary",
@@ -525,36 +531,67 @@ if page == "Dashboard":
                 st.rerun()
 
         with action_col2:
+
             if st.button(
                 "📂 View All Results",
                 use_container_width=True,
             ):
                 st.session_state.navigation = "Results"
                 st.rerun()
-    elif page == "Create Task":
+
+
+# ==========================================================
+# CREATE TASK
+# ==========================================================
+
+elif page == "Create Task":
 
     st.title("📝 Create a New Task")
-    st.caption("Define your goal and let AgentForge AI coordinate a multi-agent workflow.")
+
+    st.caption(
+        "Define your goal and let AgentForge AI coordinate "
+        "a multi-agent workflow."
+    )
 
     # Hero section
-    st.markdown("""
-    <div class="hero">
-        <div class="hero-tag">⚡ MULTI-AGENT EXECUTION</div>
-        <h2>Turn your ideas into structured results.</h2>
-        <p>Describe your task, select a workflow, and let AI agents plan,
-        execute, and review the outcome.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="hero">
+            <div class="hero-tag">
+                ⚡ MULTI-AGENT EXECUTION
+            </div>
+
+            <h2>
+                Turn your ideas into structured results.
+            </h2>
+
+            <p>
+                Describe your task, select a workflow, and let AI agents
+                plan, execute, and review the outcome.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.write("")
 
     # Workflow descriptions
     workflow_info = {
-        "General Task": "Handle general queries, problem-solving, and structured tasks.",
-        "Research and Report": "Prepare structured research with analysis and conclusions.",
-        "Coding and Debugging": "Generate code, explain logic, and help resolve programming problems.",
-        "Study Planning": "Create organized study plans, learning roadmaps, and schedules.",
-        "Content Creation": "Generate articles, reports, documentation, and other written content."
+        "General Task":
+            "Handle general queries, problem-solving, and structured tasks.",
+
+        "Research and Report":
+            "Prepare structured research with analysis and conclusions.",
+
+        "Coding and Debugging":
+            "Generate code, explain logic, and help resolve programming problems.",
+
+        "Study Planning":
+            "Create organized study plans, learning roadmaps, and schedules.",
+
+        "Content Creation":
+            "Generate articles, reports, documentation, and other written content.",
     }
 
     st.subheader("1. Define your task")
@@ -563,7 +600,7 @@ if page == "Dashboard":
 
         title = st.text_input(
             "Task Title",
-            placeholder="Example: Prepare a Python learning roadmap"
+            placeholder="Example: Prepare a Python learning roadmap",
         )
 
         description = st.text_area(
@@ -576,14 +613,14 @@ if page == "Dashboard":
                 "• Constraints or preferences\n"
                 "• Expected output format"
             ),
-            height=180
+            height=180,
         )
 
         st.subheader("2. Select workflow")
 
         workflow = st.selectbox(
             "Workflow Type",
-            options=list(workflow_info.keys())
+            options=list(workflow_info.keys()),
         )
 
         st.info(f"💡 {workflow_info[workflow]}")
@@ -591,14 +628,17 @@ if page == "Dashboard":
         submitted = st.form_submit_button(
             "🚀 Run Multi-Agent Workflow",
             type="primary",
-            use_container_width=True
+            use_container_width=True,
         )
 
     # Workflow execution
     if submitted:
 
         if not title.strip() or not description.strip():
-            st.error("Please enter both a task title and task description.")
+
+            st.error(
+                "Please enter both a task title and task description."
+            )
 
         else:
 
@@ -614,21 +654,26 @@ if page == "Dashboard":
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "result": None,
                 "error": None,
-                "events": []
+                "events": [],
             }
 
             # Add task to session history
             st.session_state.task_history.insert(0, task)
+
             st.session_state.active_task = task_id
 
             st.divider()
+
             st.subheader("3. Agent Execution")
 
-            progress = st.progress(0, text="Preparing workflow...")
+            progress = st.progress(
+                0,
+                text="Preparing workflow...",
+            )
 
             stage_area = st.status(
                 "Starting AgentForge AI workflow",
-                expanded=True
+                expanded=True,
             )
 
             try:
@@ -641,7 +686,7 @@ if page == "Dashboard":
 
                     progress.progress(
                         min(max(int(percent), 0), 100),
-                        text=stage_name
+                        text=stage_name,
                     )
 
                 with st.spinner(
@@ -652,7 +697,7 @@ if page == "Dashboard":
                         title=task["title"],
                         description=task["description"],
                         workflow=task["type"],
-                        on_stage=on_stage
+                        on_stage=on_stage,
                     )
 
                 # Update task
@@ -663,15 +708,20 @@ if page == "Dashboard":
                 stage_area.update(
                     label="Workflow completed successfully",
                     state="complete",
-                    expanded=False
+                    expanded=False,
                 )
 
-                progress.progress(100, text="Completed")
+                progress.progress(
+                    100,
+                    text="Completed",
+                )
 
                 # Save task to Supabase
                 save_task(task)
 
-                st.success("Your task has been completed successfully!")
+                st.success(
+                    "Your task has been completed successfully!"
+                )
 
                 st.subheader("🤖 Final Reviewed Result")
 
@@ -681,9 +731,11 @@ if page == "Dashboard":
                 st.download_button(
                     label="⬇️ Download Result",
                     data=str(result),
-                    file_name=f"{title.strip().replace(' ', '_')}_result.md",
+                    file_name=(
+                        f"{title.strip().replace(' ', '_')}_result.md"
+                    ),
                     mime="text/markdown",
-                    use_container_width=True
+                    use_container_width=True,
                 )
 
                 # Agent execution log
@@ -702,12 +754,16 @@ if page == "Dashboard":
                             )
 
                             if event.get("summary"):
+
                                 st.write(event["summary"])
 
                             st.divider()
 
                     else:
-                        st.info("No execution events were returned.")
+
+                        st.info(
+                            "No execution events were returned."
+                        )
 
             except Exception as exc:
 
@@ -717,121 +773,252 @@ if page == "Dashboard":
                 stage_area.update(
                     label="Workflow execution failed",
                     state="error",
-                    expanded=True
+                    expanded=True,
                 )
 
-                st.error("The workflow could not be completed.")
+                st.error(
+                    "The workflow could not be completed."
+                )
 
                 st.caption(f"Error details: {exc}")
 
-                # Save failed task as well
+                # Save failed task
                 try:
+
                     save_task(task)
+
                 except Exception as save_exc:
-                    st.warning(f"Task history could not be saved: {save_exc}")
+
+                    st.warning(
+                        f"Task history could not be saved: {save_exc}"
+                    )
+
+
+# ==========================================================
+# AGENT WORKSPACE
+# ==========================================================
+
 elif page == "Agent Workspace":
+
     st.title("🧠 Agent Workspace")
-    st.write("Review the stages used by the current orchestration workflow.")
+
+    st.write(
+        "Review the stages used by the current orchestration workflow."
+    )
+
     descriptions = [
-        ("Planner Agent", "Creates a structured plan and identifies subtasks."),
-        ("Research Agent", "For research workflows, produces a research-focused draft. It does not independently browse the web unless web search is separately integrated."),
-        ("Specialist Agent", "Generates the main output according to the selected workflow."),
-        ("Review Agent", "Checks completeness, clarity, consistency, and requested format."),
+
+        (
+            "Planner Agent",
+            "Creates a structured plan and identifies subtasks.",
+        ),
+
+        (
+            "Research Agent",
+            "For research workflows, produces a research-focused draft. "
+            "It does not independently browse the web unless web search "
+            "is separately integrated.",
+        ),
+
+        (
+            "Specialist Agent",
+            "Generates the main output according to the selected workflow.",
+        ),
+
+        (
+            "Review Agent",
+            "Checks completeness, clarity, consistency, and requested format.",
+        ),
+
     ]
+
     for name, description in descriptions:
+
         with st.expander(name):
+
             st.write(description)
-            st.caption("Runs as a distinct stage in the multi-call workflow.")
+
+            st.caption(
+                "Runs as a distinct stage in the multi-call workflow."
+            )
 
     st.divider()
+
     st.subheader("Recent Tasks")
+
     if not st.session_state.task_history:
-        st.info("No tasks yet. Create a task to populate your workspace.")
+
+        st.info(
+            "No tasks yet. Create a task to populate your workspace."
+        )
+
     else:
+
         for task in st.session_state.task_history[:10]:
+
             with st.container(border=True):
+
                 st.write(f"**{task['title']}**")
-                st.write(f"Workflow: {task['type']} · Status: {task['status']}")
-                st.caption(f"Task ID: {task['id']}")
+
+                st.write(
+                    f"Workflow: {task['type']} · "
+                    f"Status: {task['status']}"
+                )
+
+                st.caption(
+                    f"Task ID: {task['id']}"
+                )
+
+
+# ==========================================================
+# RESULTS
+# ==========================================================
 
 elif page == "Results":
+
     st.title("📊 Task Results")
 
     col1, col2 = st.columns([4, 1])
 
     with col1:
-        st.write("View your completed and previously saved tasks.")
+
+        st.write(
+            "View your completed and previously saved tasks."
+        )
 
     with col2:
+
         if st.button("🔄 Refresh History"):
+
             saved_tasks = load_tasks()
 
+            # Always replace local history with database history.
+            st.session_state.task_history = saved_tasks
+
             if saved_tasks:
-                st.session_state.task_history = saved_tasks
+
                 st.success("Task history refreshed.")
+
             else:
-                st.info("No saved tasks found for this session.")
+
+                st.info(
+                    "No saved tasks found in your account."
+                )
 
     tasks = st.session_state.task_history
 
     if not tasks:
-        st.info("No tasks available. Create a task first.")
+
+        st.info(
+            "No tasks available. Create a task first."
+        )
+
     else:
+
         for task in tasks:
+
             with st.expander(
                 f"{task['title']} · {task['status']}",
                 expanded=False,
             ):
+
                 st.write(
                     "**Workflow:**",
                     task.get("type", "General Task"),
                 )
+
                 st.write(
                     "**Created:**",
                     task.get("created_at", "Unknown"),
                 )
 
                 st.write("**Description:**")
-                st.write(task.get("description", ""))
+
+                st.write(
+                    task.get("description", "")
+                )
 
                 if task.get("result"):
-                    st.subheader("Final Reviewed Result")
-                    st.markdown(task["result"])
+
+                    st.subheader(
+                        "Final Reviewed Result"
+                    )
+
+                    st.markdown(
+                        task["result"]
+                    )
+
+                    st.download_button(
+                        label="⬇️ Download Result",
+                        data=str(task["result"]),
+                        file_name=(
+                            f"{task['title'].replace(' ', '_')}_result.md"
+                        ),
+                        mime="text/markdown",
+                        key=f"download_{task['id']}",
+                    )
 
                 if task.get("error"):
-                    st.error(task["error"])
+
+                    st.error(
+                        task["error"]
+                    )
 
                 events = task.get("events", [])
 
                 if events:
+
                     st.subheader("Execution Log")
 
                     for event in events:
+
                         st.markdown(
                             f"- **{event.get('stage', 'Stage')}** — "
                             f"{event.get('status', 'completed')}: "
                             f"{event.get('summary', '')}"
                         )
 
+
+# ==========================================================
+# ABOUT
+# ==========================================================
+
 elif page == "About":
+
     st.title("ℹ️ About AgentForge AI")
+
     st.markdown(
         """
-        AgentForge AI coordinates multiple AI workflow stages to turn a user request
-        into a planned, generated, and reviewed result.
+        AgentForge AI coordinates multiple AI workflow stages to turn
+        a user request into a planned, generated, and reviewed result.
 
-        **Included in this upgrade**
-        - Planner, specialist, and review model stages
-        - Per-stage progress and execution log
+        ### Included Features
+
+        - Planner, Research, Specialist, and Review stages
+        - Per-stage progress and execution logs
         - Task result history
-        - Optional Supabase persistence
+        - Supabase authentication and persistence
         - Gemini model configuration through Streamlit Secrets
+        - Analytics dashboard
+        - Downloadable task results
 
-        **Current limitations**
+        ### Current Limitations
+
         - The stages are sequential model calls, not separate autonomous services.
         - Research tasks do not automatically browse the web or verify external sources.
-        - Without Supabase credentials and the SQL setup, task history is session-only.
-        - Public deployments should add user authentication before storing private user data.
+        - Authentication is implemented; continue validating Row Level Security
+          and user isolation before public deployment.
+
+        ### Technology Stack
+
+        - Python
+        - Streamlit
+        - Google Gemini
+        - Supabase
+        - Pandas
         """
     )
-    st.caption("AgentForge AI | Multi-stage AI workflow prototype")
+
+    st.caption(
+        "AgentForge AI | Multi-stage AI workflow platform"
+    )
