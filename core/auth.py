@@ -170,12 +170,11 @@ def show_auth_page():
                     )
                     st.stop()
 
-            except Exception:
-                st.error(
-                    "This password recovery link is invalid or expired. "
-                    "Please request a new one."
-                )
-                st.stop()
+           except Exception as exc:
+
+    st.error(
+        f"Password reset failed: {type(exc).__name__}: {exc}"
+    )
 
         with st.form("reset_password_form"):
 
