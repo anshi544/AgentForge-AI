@@ -531,6 +531,204 @@ if page == "Dashboard":
             ):
                 st.session_state.navigation = "Results"
                 st.rerun()
+                elif page == "Create Task":
+
+    st.title("📝 Create a New Task")
+    st.caption("Define your goal and let AgentForge AI coordinate a multi-agent workflow.")
+
+    # Hero section
+    st.markdown("""
+    <div class="hero">
+        <div class="hero-tag">⚡ MULTI-AGENT EXECUTION</div>
+        <h2>Turn your ideas into structured results.</h2>
+        <p>Describe your task, select a workflow, and let AI agents plan,
+        execute, and review the outcome.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.write("")
+
+    # Workflow descriptions
+    workflow_info = {
+        "General Task": "Handle general queries, problem-solving, and structured tasks.",
+        "Research and Report": "Prepare structured research with analysis and conclusions.",
+        "Coding and Debugging": "Generate code, explain logic, and help resolve programming problems.",
+        "Study Planning": "Create organized study plans, learning roadmaps, and schedules.",
+        "Content Creation": "Generate articles, reports, documentation, and other written content."
+    }
+
+    st.subheader("1. Define your task")
+
+    with st.form("task_form", clear_on_submit=True):
+
+        title = st.text_input(
+            "Task Title",
+            placeholder="Example: Prepare a Python learning roadmap"
+        )
+
+        description = st.text_area(
+            "Task Description",
+            placeholder=(
+                "Describe what you want to achieve.\n\n"
+                "Include:\n"
+                "• Your objective\n"
+                "• Important requirements\n"
+                "• Constraints or preferences\n"
+                "• Expected output format"
+            ),
+            height=180
+        )
+
+        st.subheader("2. Select workflow")
+
+        workflow = st.selectbox(
+            "Workflow Type",
+            options=list(workflow_info.keys())
+        )
+
+        st.info(f"💡 {workflow_info[workflow]}")
+
+        submitted = st.form_submit_button(
+            "🚀 Run Multi-Agent Workflow",
+            type="primary",
+            use_container_width=True
+        )
+
+    # Workflow execution
+    if submitted:
+
+        if not title.strip() or not description.strip():
+            st.error("Please enter both a task title and task description.")
+
+        else:
+
+            task_id = str(uuid.uuid4())
+
+            task = {
+                "id": task_id,
+                "session_id": st.session_state.session_id,
+                "title": title.strip(),
+                "description": description.strip(),
+                "type": workflow,
+                "status": "Running",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "result": None,
+                "error": None,
+                "events": []
+            }
+
+            # Add task to session history
+            st.session_state.task_history.insert(0, task)
+            st.session_state.active_task = task_id
+
+            st.divider()
+            st.subheader("3. Agent Execution")
+
+            progress = st.progress(0, text="Preparing workflow...")
+
+            stage_area = st.status(
+                "Starting AgentForge AI workflow",
+                expanded=True
+            )
+
+            try:
+
+                def on_stage(stage_name, message, percent):
+
+                    stage_area.write(
+                        f"**{stage_name}:** {message}"
+                    )
+
+                    progress.progress(
+                        min(max(int(percent), 0), 100),
+                        text=stage_name
+                    )
+
+                with st.spinner(
+                    "AgentForge AI is coordinating the workflow..."
+                ):
+
+                    result, events = run_multi_agent_workflow(
+                        title=task["title"],
+                        description=task["description"],
+                        workflow=task["type"],
+                        on_stage=on_stage
+                    )
+
+                # Update task
+                task["result"] = result
+                task["events"] = events
+                task["status"] = "Completed"
+
+                stage_area.update(
+                    label="Workflow completed successfully",
+                    state="complete",
+                    expanded=False
+                )
+
+                progress.progress(100, text="Completed")
+
+                # Save task to Supabase
+                save_task(task)
+
+                st.success("Your task has been completed successfully!")
+
+                st.subheader("🤖 Final Reviewed Result")
+
+                st.markdown(result)
+
+                # Download result
+                st.download_button(
+                    label="⬇️ Download Result",
+                    data=str(result),
+                    file_name=f"{title.strip().replace(' ', '_')}_result.md",
+                    mime="text/markdown",
+                    use_container_width=True
+                )
+
+                # Agent execution log
+                with st.expander("📋 View Agent Execution Log"):
+
+                    if events:
+
+                        for event in events:
+
+                            st.markdown(
+                                f"**{event.get('stage', 'Agent')}**"
+                            )
+
+                            st.caption(
+                                f"Status: {event.get('status', 'N/A')}"
+                            )
+
+                            if event.get("summary"):
+                                st.write(event["summary"])
+
+                            st.divider()
+
+                    else:
+                        st.info("No execution events were returned.")
+
+            except Exception as exc:
+
+                task["status"] = "Failed"
+                task["error"] = str(exc)
+
+                stage_area.update(
+                    label="Workflow execution failed",
+                    state="error",
+                    expanded=True
+                )
+
+                st.error("The workflow could not be completed.")
+
+                st.caption(f"Error details: {exc}")
+
+                # Save failed task as well
+                try:
+                    save_task(task)
+                except Exception as save_exc:
+                    st.warning(f"Task history could not be saved: {save_exc}")
 elif page == "Agent Workspace":
     st.title("🧠 Agent Workspace")
     st.write("Review the stages used by the current orchestration workflow.")
