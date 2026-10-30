@@ -531,7 +531,7 @@ if page == "Dashboard":
             ):
                 st.session_state.navigation = "Results"
                 st.rerun()
-                elif page == "Create Task":
+    elif page == "Create Task":
 
     st.title("📝 Create a New Task")
     st.caption("Define your goal and let AgentForge AI coordinate a multi-agent workflow.")
