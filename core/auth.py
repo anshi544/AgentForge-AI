@@ -377,7 +377,7 @@ def show_auth_page():
                         "address and password requirements."
                     )
 
-    # --------------------------------------------------
+        # --------------------------------------------------
     # FORGOT PASSWORD
     # --------------------------------------------------
 
@@ -414,11 +414,11 @@ def show_auth_page():
                 try:
 
                     client.auth.reset_password_for_email(
-    recovery_email.strip(),
-    {
-        "redirect_to": "https://agentforge-ai-lvsp6zbtpm3gcln8rcvmmy.streamlit.app/"
-    },
-)
+                        recovery_email.strip(),
+                        {
+                            "redirect_to": "https://agentforge-ai-lvsp6zbtpm3gcln8rcvmmy.streamlit.app/"
+                        },
+                    )
 
                     st.success(
                         "If an account exists for that email, "
@@ -426,9 +426,8 @@ def show_auth_page():
                         "Please check your inbox and spam folder."
                     )
 
-                except Exception:
+                except Exception as exc:
 
                     st.error(
-                        "Unable to send the reset email. "
-                        "Please try again later."
+                        f"Password reset failed: {type(exc).__name__}: {exc}"
                     )
