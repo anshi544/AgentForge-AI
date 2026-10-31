@@ -48,6 +48,7 @@ def set_authenticated_session(response):
         "id": str(user.id),
         "email": user.email,
     }
+
     st.session_state.auth_access_token = session.access_token
     st.session_state.auth_refresh_token = session.refresh_token
     st.session_state.session_id = str(user.id)
@@ -90,6 +91,7 @@ def get_authenticated_client():
         # Preserve refreshed tokens if the SDK refreshed the session.
         st.session_state.auth_access_token = session.access_token
         st.session_state.auth_refresh_token = session.refresh_token
+
         st.session_state.auth_user = {
             "id": str(user.id),
             "email": user.email,
@@ -111,10 +113,13 @@ def logout():
 
     try:
         client = get_authenticated_client()
+
         if client is not None:
             client.auth.sign_out()
+
     except Exception:
         pass
+
     finally:
         clear_auth_state()
 
@@ -126,12 +131,14 @@ def show_auth_page():
 
     st.title("🤖 AgentForge AI")
     st.subheader("Your AI workspace starts here")
+
     st.write(
         "Sign in, create an account, or recover your password."
     )
 
     try:
         client = get_auth_client()
+
     except Exception as exc:
         st.error(str(exc))
         st.stop()
@@ -163,6 +170,7 @@ def show_auth_page():
                 if set_authenticated_session(response):
                     st.session_state.recovery_verified = True
                     st.rerun()
+
                 else:
                     st.error(
                         "Password recovery link could not be verified. "
@@ -170,12 +178,14 @@ def show_auth_page():
                     )
                     st.stop()
 
-           except Exception as exc:
+            except Exception as exc:
+                st.error(
+                    f"Password recovery verification failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+                st.stop()
 
-    st.error(
-        f"Password reset failed: {type(exc).__name__}: {exc}"
-    )
-
+        # New password form
         with st.form("reset_password_form"):
 
             new_password = st.text_input(
@@ -213,7 +223,6 @@ def show_auth_page():
                     st.session_state.recovery_verified = False
 
                     clear_auth_state()
-
                     st.query_params.clear()
 
                     st.success(
@@ -223,10 +232,10 @@ def show_auth_page():
 
                     st.rerun()
 
-                except Exception:
+                except Exception as exc:
                     st.error(
-                        "Unable to update your password. "
-                        "Please try again."
+                        f"Unable to update password: "
+                        f"{type(exc).__name__}: {exc}"
                     )
 
         st.stop()
@@ -269,34 +278,28 @@ def show_auth_page():
         if login_clicked:
 
             if not email.strip() or not password:
-
                 st.error(
                     "Enter your email address and password."
                 )
 
             else:
-
                 try:
-
                     response = client.auth.sign_in_with_password({
                         "email": email.strip(),
                         "password": password,
                     })
 
                     if set_authenticated_session(response):
-
                         st.success("Login successful!")
                         st.rerun()
 
                     else:
-
                         st.error(
                             "No authenticated session was returned. "
                             "Verify your email address and try again."
                         )
 
                 except Exception:
-
                     st.error(
                         "Login failed. Check your credentials and "
                         "ensure your email address has been verified."
@@ -336,48 +339,40 @@ def show_auth_page():
         if signup_clicked:
 
             if not new_email.strip():
-
                 st.error("Enter your email address.")
 
             elif len(new_password) < 8:
-
                 st.error(
                     "Use a password with at least 8 characters."
                 )
 
             elif new_password != confirm_password:
-
                 st.error("The passwords do not match.")
 
             else:
-
                 try:
-
                     response = client.auth.sign_up({
                         "email": new_email.strip(),
                         "password": new_password,
                     })
 
                     if set_authenticated_session(response):
-
                         st.success("Account created successfully!")
                         st.rerun()
 
                     else:
-
                         st.success(
                             "Registration submitted! Check your inbox "
                             "for the Supabase verification email."
                         )
 
                 except Exception:
-
                     st.error(
                         "Account creation failed. Check the email "
                         "address and password requirements."
                     )
 
-        # --------------------------------------------------
+    # --------------------------------------------------
     # FORGOT PASSWORD
     # --------------------------------------------------
 
@@ -403,15 +398,21 @@ def show_auth_page():
                 use_container_width=True,
             )
 
-                if recovery_clicked:
+        if recovery_clicked:
+
             if not recovery_email.strip():
-                st.error("Please enter your registered email address.")
+                st.error(
+                    "Please enter your registered email address."
+                )
+
             else:
                 try:
                     client.auth.reset_password_for_email(
                         recovery_email.strip(),
                         {
-                            "redirect_to": "https://agentforge-ai-lvsp6zbtpm3gcln8rcvmmy.streamlit.app/"
+                            "redirect_to": (
+                                "https://agentforge-ai-lvsp6zbtpm3gcln8rcvmmy.streamlit.app/"
+                            )
                         },
                     )
 
@@ -423,5 +424,6 @@ def show_auth_page():
 
                 except Exception as exc:
                     st.error(
-                        f"Password reset failed: {type(exc).__name__}: {exc}"
+                        f"Password reset failed: "
+                        f"{type(exc).__name__}: {exc}"
                     )
