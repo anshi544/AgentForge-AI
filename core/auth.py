@@ -403,16 +403,11 @@ def show_auth_page():
                 use_container_width=True,
             )
 
-        if recovery_clicked:
-
+                if recovery_clicked:
             if not recovery_email.strip():
-
                 st.error("Please enter your registered email address.")
-
             else:
-
                 try:
-
                     client.auth.reset_password_for_email(
                         recovery_email.strip(),
                         {
@@ -427,7 +422,6 @@ def show_auth_page():
                     )
 
                 except Exception as exc:
-
                     st.error(
                         f"Password reset failed: {type(exc).__name__}: {exc}"
                     )
